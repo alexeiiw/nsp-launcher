@@ -1,0 +1,27 @@
+# Build output
+build/
+dist/
+*.apk
+*.idsig
+
+# Signing material
+keystore/
+*.jks
+*.keystore
+
+# Local configuration
+local.properties
+.env
+.gradle/
+.idea/
+*.iml
+.vscode/
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and captures
+*.log
+captures/

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppThemeDark" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bg_dark</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:colorPrimary">@color/bg_dark</item>
+        <item name="android:colorPrimaryDark">@color/bg_dark</item>
+        <item name="android:statusBarColor">@color/bg_dark</item>
+        <item name="android:navigationBarColor">@color/bg_dark</item>
+        <item name="android:textColorPrimary">#FFFFFFFF</item>
+        <item name="android:textColorSecondary">#FF9E9E9E</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+
+    <style name="AppThemeLight" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/bg_light</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:colorPrimary">@color/bg_light</item>
+        <item name="android:colorPrimaryDark">@color/bg_dark</item>
+        <item name="android:statusBarColor">@color/bg_light</item>
+        <item name="android:navigationBarColor">@color/bg_dark</item>
+        <item name="android:textColorPrimary">#FF111111</item>
+        <item name="android:textColorSecondary">#FF666666</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+
+</resources>
