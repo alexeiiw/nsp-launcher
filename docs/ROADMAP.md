@@ -7,8 +7,9 @@ Tegra 4, 2 GB de RAM, mando integrado (cruceta, sticks analógicos, A/B/X/Y, L1/
 SELECT) y pantalla táctil. Todo lo de esta lista está pensado para esa pantalla, ese mando y
 ese uso: jugar, escribir rápido y no tocar el launcher más de lo necesario.
 
-Estado actual: **1.1** es la base funcional y cerró los cuatro puntos que estaban abiertos
-(mosaico de Avisos, fondo y tema unificados, menú por app y anillo de batería).
+Estado actual: **1.2** es la base funcional y cerró los cuatro puntos que estaban abiertos
+(mosaico de Avisos, fondo y tema unificados, menú por app y anillo de batería), más el reloj
+conmutable y el panel de 5 tarjetas.
 
 **No hay pendientes abiertos.**
 
@@ -21,7 +22,6 @@ No están planificadas ni compromise; se anotan por si en algún momento hay gan
 - Tarjeta de red (Wi-Fi, SSID y señal).
 - Diagnóstico de rendimiento con botón "copiar" para reportar issues con datos reales.
 - Exportar e importar ajustes (favoritos, categorías) en JSON.
-- Autoactualizador desde GitHub Releases.
 - Búsqueda local de apps.
 - Gestión del tamaño de la caché de iconos.
 - Reloj de 12 h y formato de fecha corto en la cabecera.

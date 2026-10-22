@@ -29,13 +29,8 @@ public class Dashboard extends LinearLayout {
     private final boolean light;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Locale locale = new Locale("es", "ES");
-    private final SimpleDateFormat weekdayFormat = new SimpleDateFormat("EEEE", locale);
-    private final SimpleDateFormat monthFormat = new SimpleDateFormat("MMMM", locale);
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", locale);
 
-    private final TextView weekdayView;
-    private final TextView dayView;
-    private final TextView monthView;
     private final BatteryRingView ring;
     private final TextView batteryStatus;
     private final TextView cityView;
@@ -59,41 +54,18 @@ public class Dashboard extends LinearLayout {
 
     private final Runnable ticker = new Runnable() {
         public void run() {
-            updateDate();
             tick++;
             if (tick % 3 == 0) updateMemory();
             if (running) handler.postDelayed(this, 10000);
         }
     };
 
-    public Dashboard(Context context, boolean light, boolean showSeconds, final Runnable refreshWeather) {
+    public Dashboard(Context context, boolean light, final Runnable refreshWeather) {
         super(context);
         this.ctx = context;
         this.light = light;
         setOrientation(HORIZONTAL);
 
-        int accent = light ? 0xFF0050EF : 0xFF1BA1E2;
-
-        LinearLayout dateCard = newCard(1.12f, surface());
-        weekdayView = new TextView(ctx);
-        weekdayView.setTextSize(9);
-        weekdayView.setTextColor(accent);
-        weekdayView.setLetterSpacing(0.12f);
-        weekdayView.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
-        dateCard.addView(weekdayView, new LayoutParams(-1, -2));
-
-        dayView = new TextView(ctx);
-        dayView.setTextSize(32);
-        dayView.setTextColor(textColor());
-        dayView.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
-        dateCard.addView(dayView, new LayoutParams(-1, -2));
-
-        monthView = new TextView(ctx);
-        monthView.setTextSize(9);
-        monthView.setTextColor(secondaryColor());
-        monthView.setLetterSpacing(0.12f);
-        dateCard.addView(monthView, new LayoutParams(-1, -2));
-        addView(dateCard);
 
         LinearLayout batteryCard = newCard(0.95f, surface());
         batteryCard.setGravity(Gravity.CENTER);
@@ -256,7 +228,6 @@ public class Dashboard extends LinearLayout {
         running = true;
         handler.removeCallbacks(ticker);
         tick = 0;
-        updateDate();
         updateMemory();
         handler.postDelayed(ticker, 10000);
     }
@@ -267,7 +238,6 @@ public class Dashboard extends LinearLayout {
     }
 
     public void refreshNow() {
-        updateDate();
         updateMemory();
     }
 
@@ -308,13 +278,6 @@ public class Dashboard extends LinearLayout {
             updatedView.setText("");
             weatherIcon.setCode(3);
         }
-    }
-
-    private void updateDate() {
-        Calendar now = Calendar.getInstance();
-        dayView.setText(String.valueOf(now.get(Calendar.DAY_OF_MONTH)));
-        weekdayView.setText(weekdayFormat.format(now.getTime()).toUpperCase(locale));
-        monthView.setText(monthFormat.format(now.getTime()).toUpperCase(locale));
     }
 
     private void updateMemory() {

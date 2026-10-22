@@ -14,7 +14,6 @@ MainActivity
 ├── NotificationStore   contadores por paquete y descarte (hilo principal)
 ├── Dashboard          tarjetas del panel
 │   ├── BatteryRingView medidor circular de batería (Canvas)
-│   ├── ClockView      reloj analógico (Canvas), usado en grande y en la cabecera
 │   ├── WeatherIconView iconos de clima (Canvas)
 │   └── Bar            barras de memoria
 ├── SettingsActivity   ajustes y alias HOME
@@ -58,7 +57,7 @@ Sin caché (primer arranque) se muestra "CARGANDO APLICACIONES" y se hace el esc
 ## UI y foco
 
 - `Sistema` contiene los mosaicos **Ajustes** y **Avisos**, y el `Dashboard` con las tarjetas
-  de fecha, batería, clima y memoria.
+  de batería, clima y memoria. La fecha vive en la cabecera.
 - `RECIENTES`, `Favoritos` y categorías son secciones con encabezado y una **rejilla de 5 columnas**.
 - Cada sección guarda su contenedor, rejilla y cabecera para poder insertar/eliminar en sitio.
 - El foco es lógico (`focusSection`, `focusIndex`), no depende del `focusSearch` de Android.
@@ -119,8 +118,10 @@ Sin caché (primer arranque) se muestra "CARGANDO APLICACIONES" y se hace el esc
 
 ## Cabecera y pista de controles
 
-- La cabecera lleva el título `NSP` y, a la derecha, un `ClockView` de 44 dp con la fecha larga
-  (`miércoles 21 de octubre`) y la hora en 24 h. Ambas se refrescan cada 10 s.
+- La cabecera lleva el título `NSP` y, a la derecha, la fecha larga y un reloj cuyo estilo se
+  elige en Ajustes: **analógico** (`ClockView` de 44 dp), **digital** (`HH:mm`, o `HH:mm:ss` con el
+  segundero) u **oculto** (entonces la fecha crece: día grande + día de la semana y mes).
+- Un ticker de 1 s actualiza los textos solo cuando cambian; el reloj analógico se redibuja solo.
 - La pista de controles (`A abrir | X favorito | …`) es una vista flotante sobre la rejilla:
   aparece al construir la UI por primera vez, se atenúa a los 6 s y vuelve a mostrarse cuando
   llega una tecla sin asignar (volumen, NVIDIA, medios…).

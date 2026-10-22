@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2
+
+- **Un solo reloj en la cabecera**, elegible en Ajustes: **Analógico / Digital / Oculto**.
+- La **fecha larga** (día de la semana, día y mes) queda a la izquierda del reloj.
+- Con el reloj **oculto**, la fecha crece en la esquina derecha (día grande + miércoles/octubre).
+- **Segundero** aplica al analógico (aguja) y al digital (`HH:mm:ss`).
+- **Se quita la tarjeta de fecha del panel**: quedan `Ajustes | Avisos | Batería | Clima | Memoria`,
+  con más ancho para las tarjetas.
+- Sin actualización automática: se mantiene el método de copiar el APK a la consola.
+- Versión 1.2 (versionCode 7).
+
 ## 1.1
 
 - **Anillo de batería** en el panel: nivel como arco de 270 %, porcentaje en el centro, color

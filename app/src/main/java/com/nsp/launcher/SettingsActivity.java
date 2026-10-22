@@ -44,6 +44,7 @@ public class SettingsActivity extends Activity {
     private TextView weatherStatus;
     private TextView notificationValue;
     private TextView backgroundValue;
+    private TextView clockValue;
 
     private static final int REQ_PICK_IMAGE = 1001;
 
@@ -110,6 +111,12 @@ public class SettingsActivity extends Activity {
             }
         });
         themeValue = themeRowValue;
+
+        clockValue = addRow(content, "Reloj de la cabecera", "", new Runnable() {
+            public void run() {
+                showClockDialog();
+            }
+        });
 
         backgroundValue = addRow(content, "Fondo de pantalla", "", new Runnable() {
             public void run() {
@@ -180,7 +187,7 @@ public class SettingsActivity extends Activity {
         });
 
         TextView footer = new TextView(this);
-        footer.setText("NSP 1.1\nAndroid 5.1 · " + WeatherService.CITY);
+        footer.setText("NSP 1.2\nAndroid 5.1 · " + WeatherService.CITY);
         footer.setTextSize(9);
         footer.setTextColor(isLight ? 0xFF888888 : 0xFF777777);
         footer.setPadding(dp(24), dp(20), dp(24), dp(24));
@@ -269,6 +276,16 @@ public class SettingsActivity extends Activity {
 
     private void updateValues() {
         if (themeValue != null) themeValue.setText(isLight ? "Claro" : "Oscuro");
+        if (clockValue != null) {
+            int style = prefs.getInt("clock_style", 0);
+            if (style == 1) {
+                clockValue.setText("Digital");
+            } else if (style == 2) {
+                clockValue.setText("Oculto");
+            } else {
+                clockValue.setText("Analógico");
+            }
+        }
         if (backgroundValue != null) {
             int mode = BackgroundManager.mode(this);
             if (mode == BackgroundManager.MODE_CUSTOM && BackgroundManager.hasCustom(this)) {
@@ -363,6 +380,31 @@ public class SettingsActivity extends Activity {
             }
         });
         dialog.show();
+    }
+
+    private void showClockDialog() {
+        final String[] items = {"Analógico", "Digital", "Oculto"};
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Reloj de la cabecera");
+        builder.setAdapter(new ArrayAdapter<String>(this,
+                android.R.layout.simple_list_item_1, items) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                TextView tv = (TextView) super.getView(position, convertView, parent);
+                tv.setTextColor(isLight ? 0xFF111111 : 0xFFFFFFFF);
+                tv.setTextSize(14);
+                tv.setPadding(dp(20), dp(6), dp(20), dp(6));
+                tv.setMinHeight(0);
+                tv.setMinimumHeight(0);
+                return tv;
+            }
+        }, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                prefs.edit().putInt("clock_style", which).apply();
+                updateValues();
+            }
+        });
+        builder.show();
     }
 
     private void showBackgroundDialog() {

@@ -90,6 +90,10 @@ public class MainActivity extends Activity {
     private ClockView headerClock;
     private TextView headerDate;
     private TextView headerTime;
+    private TextView headerWeekday;
+    private TextView headerDay;
+    private TextView headerMonth;
+    private int clockStyle;
     private TextView hintOverlay;
     private boolean hintShown;
     private BroadcastReceiver batteryReceiver;
@@ -100,6 +104,12 @@ public class MainActivity extends Activity {
             new SimpleDateFormat("EEEE d 'de' MMMM", new Locale("es", "ES"));
     private final SimpleDateFormat headerTimeFormat =
             new SimpleDateFormat("HH:mm", new Locale("es", "ES"));
+    private final SimpleDateFormat headerTimeFormatSeconds =
+            new SimpleDateFormat("HH:mm:ss", new Locale("es", "ES"));
+    private final SimpleDateFormat headerWeekdayFormat =
+            new SimpleDateFormat("EEEE", new Locale("es", "ES"));
+    private final SimpleDateFormat headerMonthFormat =
+            new SimpleDateFormat("MMMM", new Locale("es", "ES"));
 
     private final Runnable packageReload = new Runnable() {
         public void run() {
@@ -136,6 +146,7 @@ public class MainActivity extends Activity {
             prefs.edit().putBoolean("light", effectiveLight).apply();
         }
         isLight = effectiveLight;
+        clockStyle = prefs.getInt("clock_style", 0);
         setTheme(isLight ? R.style.AppThemeLight : R.style.AppThemeDark);
         super.onCreate(savedInstanceState);
 
@@ -315,33 +326,69 @@ public class MainActivity extends Activity {
         headerRight.setOrientation(LinearLayout.HORIZONTAL);
         headerRight.setGravity(Gravity.CENTER_VERTICAL);
 
-        headerClock = new ClockView(this);
-        headerClock.setColors(secondaryColor(), textColor(),
-                isLight ? 0xFF0050EF : 0xFF1BA1E2);
-        headerClock.setShowSeconds(prefs.getBoolean("clock_seconds", false));
-        LinearLayout.LayoutParams clockLp = new LinearLayout.LayoutParams(dp(44), dp(44));
-        clockLp.rightMargin = dp(8);
-        headerRight.addView(headerClock, clockLp);
+        if (clockStyle == 2) {
+            LinearLayout dateBlock = new LinearLayout(this);
+            dateBlock.setOrientation(LinearLayout.VERTICAL);
+            dateBlock.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
 
-        LinearLayout headerText = new LinearLayout(this);
-        headerText.setOrientation(LinearLayout.VERTICAL);
-        headerText.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+            headerWeekday = new TextView(this);
+            headerWeekday.setTextSize(9);
+            headerWeekday.setTextColor(isLight ? 0xFF0050EF : 0xFF1BA1E2);
+            headerWeekday.setLetterSpacing(0.12f);
+            headerWeekday.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+            headerWeekday.setSingleLine(true);
+            dateBlock.addView(headerWeekday, new LinearLayout.LayoutParams(-2, -2));
 
-        headerDate = new TextView(this);
-        headerDate.setTextSize(9);
-        headerDate.setTextColor(secondaryColor());
-        headerDate.setLetterSpacing(0.10f);
-        headerDate.setSingleLine(true);
-        headerText.addView(headerDate, new LinearLayout.LayoutParams(-2, -2));
+            headerDay = new TextView(this);
+            headerDay.setTextSize(28);
+            headerDay.setTextColor(textColor());
+            headerDay.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+            headerDay.setSingleLine(true);
+            dateBlock.addView(headerDay, new LinearLayout.LayoutParams(-2, -2));
 
-        headerTime = new TextView(this);
-        headerTime.setTextSize(16);
-        headerTime.setTextColor(textColor());
-        headerTime.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
-        headerTime.setSingleLine(true);
-        headerText.addView(headerTime, new LinearLayout.LayoutParams(-2, -2));
+            headerMonth = new TextView(this);
+            headerMonth.setTextSize(9);
+            headerMonth.setTextColor(secondaryColor());
+            headerMonth.setLetterSpacing(0.12f);
+            headerMonth.setSingleLine(true);
+            dateBlock.addView(headerMonth, new LinearLayout.LayoutParams(-2, -2));
 
-        headerRight.addView(headerText, new LinearLayout.LayoutParams(-2, -2));
+            headerRight.addView(dateBlock, new LinearLayout.LayoutParams(-2, -2));
+        } else {
+            LinearLayout headerText = new LinearLayout(this);
+            headerText.setOrientation(LinearLayout.VERTICAL);
+            headerText.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+
+            headerDate = new TextView(this);
+            headerDate.setTextSize(9);
+            headerDate.setTextColor(secondaryColor());
+            headerDate.setLetterSpacing(0.10f);
+            headerDate.setSingleLine(true);
+            headerText.addView(headerDate, new LinearLayout.LayoutParams(-2, -2));
+
+            if (clockStyle == 1) {
+                headerTime = new TextView(this);
+                headerTime.setTextSize(22);
+                headerTime.setTextColor(textColor());
+                headerTime.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+                headerTime.setSingleLine(true);
+                headerText.addView(headerTime, new LinearLayout.LayoutParams(-2, -2));
+            }
+
+            headerRight.addView(headerText, new LinearLayout.LayoutParams(-2, -2));
+
+            if (clockStyle == 0) {
+                headerClock = new ClockView(this);
+                headerClock.setColors(secondaryColor(), textColor(),
+                        isLight ? 0xFF0050EF : 0xFF1BA1E2);
+                headerClock.setShowSeconds(prefs.getBoolean("clock_seconds", false));
+                headerClock.setRunning(true);
+                LinearLayout.LayoutParams clockLp = new LinearLayout.LayoutParams(dp(44), dp(44));
+                clockLp.leftMargin = dp(8);
+                headerRight.addView(headerClock, clockLp);
+            }
+        }
+
         header.addView(headerRight, new LinearLayout.LayoutParams(-2, -2));
 
         page.addView(header, new LinearLayout.LayoutParams(-1, -2));
@@ -471,7 +518,7 @@ public class MainActivity extends Activity {
         section.tiles.add(notificationTile);
         updateNotificationBadge();
 
-        dashboard = new Dashboard(this, isLight, prefs.getBoolean("clock_seconds", false),
+        dashboard = new Dashboard(this, isLight,
                 new Runnable() {
                     public void run() {
                         fetchWeather(true);
@@ -1041,7 +1088,7 @@ public class MainActivity extends Activity {
     private final Runnable headerTicker = new Runnable() {
         public void run() {
             updateHeaderClock();
-            ui.postDelayed(this, 10000);
+            ui.postDelayed(this, 1000);
         }
     };
 
@@ -1075,10 +1122,26 @@ public class MainActivity extends Activity {
     }
 
     private void updateHeaderClock() {
-        if (headerDate == null || headerTime == null) return;
         Date now = new Date();
-        headerDate.setText(headerDateFormat.format(now).toUpperCase(new Locale("es", "ES")));
-        headerTime.setText(headerTimeFormat.format(now));
+        if (headerDate != null) {
+            String value = headerDateFormat.format(now).toUpperCase(new Locale("es", "ES"));
+            if (!value.contentEquals(headerDate.getText())) headerDate.setText(value);
+        }
+        if (headerTime != null) {
+            boolean seconds = prefs.getBoolean("clock_seconds", false);
+            SimpleDateFormat format = seconds ? headerTimeFormatSeconds : headerTimeFormat;
+            String value = format.format(now);
+            if (!value.contentEquals(headerTime.getText())) headerTime.setText(value);
+        }
+        if (headerDay != null) {
+            Calendar calendar = Calendar.getInstance();
+            String weekday = headerWeekdayFormat.format(now).toUpperCase(new Locale("es", "ES"));
+            String day = String.valueOf(calendar.get(Calendar.DAY_OF_MONTH));
+            String month = headerMonthFormat.format(now).toUpperCase(new Locale("es", "ES"));
+            if (!weekday.contentEquals(headerWeekday.getText())) headerWeekday.setText(weekday);
+            if (!day.contentEquals(headerDay.getText())) headerDay.setText(day);
+            if (!month.contentEquals(headerMonth.getText())) headerMonth.setText(month);
+        }
     }
 
     private void readBattery(Intent intent) {
@@ -1695,6 +1758,15 @@ public class MainActivity extends Activity {
 
         boolean prefLight = prefs.getBoolean("light", false);
         if (prefLight != isLight) {
+            ui.post(new Runnable() {
+                public void run() {
+                    recreate();
+                }
+            });
+            return;
+        }
+
+        if (prefs.getInt("clock_style", 0) != clockStyle) {
             ui.post(new Runnable() {
                 public void run() {
                     recreate();

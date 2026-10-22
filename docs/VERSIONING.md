@@ -1,5 +1,11 @@
 # Versionado
 
+## Versión 1.2
+
+- `versionName`: **1.2** (reloj conmutable en la cabecera y panel sin la tarjeta de fecha).
+- `versionCode`: **7**.
+- Se instala encima de la 1.1 (versionCode 6) con la misma firma, sin desinstalar.
+
 ## Versión 1.1
 
 - `versionName`: **1.1** (anillo de batería, reloj en la cabecera, mosaico de Avisos, menú por
@@ -31,6 +37,7 @@ Las entregas internas que llevaron a la 1.0 se documentan como hitos 0.1–0.5 e
 | 0.5 | Rejilla de 5 columnas, badges y fondos incluidos |
 | **1.0** | Selector de imagen de galería y tema automático |
 | **1.1** | Anillo de batería, reloj en la cabecera, mosaico de Avisos, menú por app y ajustes unificados |
+| **1.2** | Reloj analógico/digital/oculto, fecha grande al ocultarlo y panel de 5 tarjetas |
 
 No se publicaron APKs con los nombres 0.x; son hitos de desarrollo para explicar la evolución.
 Las compilaciones internas que se generaron con nombres 1.0–1.3 pertenecen a este periodo de

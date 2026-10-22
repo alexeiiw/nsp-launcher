@@ -1,4 +1,4 @@
-# NSP Launcher 1.1
+# NSP Launcher 1.2
 
 **NSP = NVIDIA Shield Portable.**
 
@@ -13,8 +13,9 @@ Windows Phone. Java puro, sin Gradle y sin dependencias externas.
 
 - **Rejilla de 5 columnas** con foco 2D: izquierda/derecha dentro de la fila, arriba/abajo
   entre filas y secciones. Nada queda escondido a la derecha.
-- **Panel de sistema**: `Ajustes | Avisos | Fecha | Batería | Clima | Memoria`.
-- **Cabecera**: título NSP + **reloj analógico pequeño** + **fecha larga y hora en 24 h**.
+- **Panel de sistema**: `Ajustes | Avisos | Batería | Clima | Memoria` (la fecha pasó a la cabecera).
+- **Cabecera**: título NSP + fecha larga + **un solo reloj**, elegible en Ajustes: **Analógico /
+  Digital / Oculto**. Con el reloj oculto, la fecha crece a la derecha (día grande).
 - **Pista de controles**: aparece al arrancar, se desvanece a los ~6 s y vuelve a salir si
   pulsas una tecla sin asignar (volumen, NVIDIA, medios…).
 - **Anillo de batería** en el panel: nivel como arco de 270 %, porcentaje en el centro, color
@@ -46,9 +47,11 @@ Windows Phone. Java puro, sin Gradle y sin dependencias externas.
 
 ## Ajustes
 
-**Apariencia** queda en dos filas, sin duplicados:
+**Apariencia**:
 
 - **Tema**: Oscuro / Claro. Con una imagen de fondo, el tema elegido manda también sobre el velo.
+- **Reloj de la cabecera**: Analógico / Digital / Oculto. El segundero aplica al analógico (aguja)
+  y al digital (`HH:mm:ss`).
 - **Fondo de pantalla**: abre un diálogo con *Incluido (tema actual)*, *Imagen de la galería*,
   *Sin fondo* y, si hay una propia, *Quitar imagen*.
 
@@ -119,7 +122,7 @@ cd NSP
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-Salida: `dist\NSPLauncher-1.1.apk` y `dist\NSPLauncher.apk` (versionCode 6).
+Salida: `dist\NSPLauncher-1.2.apk` y `dist\NSPLauncher.apk` (versionCode 7).
 
 El script autodetecta el SDK y el JDK 8; también acepta:
 
@@ -144,7 +147,7 @@ Más detalle en [docs/BUILD.md](docs/BUILD.md). La numeración se explica en
 o:
 
 ```powershell
-adb install -r .\dist\NSPLauncher-1.1.apk
+adb install -r .\dist\NSPLauncher-1.2.apk
 adb shell am start -n com.nsp.launcher/.MainActivity
 ```
 
@@ -157,8 +160,8 @@ app/src/main/
     MainActivity.java       inicio, foco 2D, rejilla, cabecera, menús
     BackgroundManager.java  imagen de la galería, recorte, EXIF, brillo y modos
     BatteryRingView.java    medidor circular de batería
-    ClockView.java          reloj analógico (grande y pequeño)
-    Dashboard.java          tarjetas de fecha, batería, clima y memoria
+    ClockView.java          reloj analógico de la cabecera
+    Dashboard.java          tarjetas de batería, clima y memoria
     WeatherIconView.java    iconos de clima dibujados
     WeatherService.java     Open-Meteo + caché
     WeatherData.java
@@ -181,9 +184,10 @@ Arquitectura y flujos en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## Verificado
 
 - Emulador **Android 5.1.1 / API 22, 1280×720 @ 320 dpi** (misma resolución y densidad que la
-  SHIELD Portable): rejilla de 5 columnas, foco 2D, anillo de batería, reloj de la cabecera,
-  pista de controles que se desvanece, mosaico de avisos con lista y descarte, menú por app,
-  ajustes de fondo unificados, clima, memoria, favoritos, recientes y uso como Inicio.
+  SHIELD Portable): rejilla de 5 columnas, foco 2D, panel de 5 tarjetas, anillo de batería,
+  reloj de cabecera en sus tres estilos (analógico, digital con segundero y oculto con fecha
+  grande), pista de controles que se desvanece, mosaico de avisos con lista y descarte, menú por
+  app, ajustes de fondo unificados, clima, memoria, favoritos, recientes y uso como Inicio.
 - Flujo completo de Inicio: activar → elegir NSP → Siempre; B/BACK no cierran; desactivar → vuelve
   NVIDIA.
 - Instalación limpia, arranque en frío y con caché, sin crashes ni ANR.
