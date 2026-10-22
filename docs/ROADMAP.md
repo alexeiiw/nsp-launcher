@@ -4,18 +4,20 @@
 
 Contexto de diseño: consola de 5" con 1280×720 (640×360 dp), Android 5.1.1 (API 22),
 Tegra 4, 2 GB de RAM, mando integrado (cruceta, sticks analógicos, A/B/X/Y, L1/R1, START,
-SELECT) y pantalla táctil. Todo lo que se propose aquí está pensado para esa pantalla, ese
-mando y ese uso: jugar, escribir rápido y no tocar el launcher más de lo necesario.
+SELECT) y pantalla táctil. Todo lo de esta lista está pensado para esa pantalla, ese mando y
+ese uso: jugar, escribir rápido y no tocar el launcher más de lo necesario.
 
 Estado actual: **1.0** es la base funcional (rejilla de 5 columnas, panel de sistema, clima,
 contadores por mosaico, imagen de fondo de la galería, caché de arranque, uso como Inicio).
-Este documento recoge solo lo que queda pendiente.
+Aquí solo están los puntos que quedan pendientes.
+
+Reglas de trabajo: un punto por versión, `versionCode` siempre creciente, **siempre la misma
+clave de firma**, pruebas en el emulador API 22 (1280×720 @ 320 dpi) y lo que toque la consola
+real se anota como "pendiente de hardware".
 
 ---
 
-## Prioridad 1 — lo que se usa todos los días
-
-### 1. Mosaico de Notificaciones (detalle)
+## 1. Mosaico de Notificaciones
 
 **Qué es**
 Un mosaico más en la fila **SISTEMA**, junto a Ajustes, con la burbuja del total de
@@ -80,29 +82,70 @@ No requiere permisos nuevos ni tocar la UI del panel.
 4. Con cero notificaciones el mosaico se oculta o muestra 0 sin fallar.
 5. No se lee el texto de las notificaciones en ningún momento.
 
-### 2. Fila de "más jugados"
+---
 
-Contadores propios de aperturas (en `SharedPreferences`, sin permisos ni servicios de Google).
-En una consola de juegos vale más que "Favoritos": la fila de arriba muestra las 5 apps que más
-se lanzan. Se puede combinar con Favoritos: la primera fila "RECIENTES" y una segunda "JUEGOS"
-con el ranking, o sustituir RECIENTES por el ranking.
+## 2. Ajustes de fondo de pantalla y tema en un solo sitio
 
-### 3. Fila de accesos rápidos
+**El problema**
+Hoy la sección APARIENCIA de Ajustes tiene cinco filas que hablan de lo mismo: **Tema**,
+**Fondo**, **Imagen de fondo**, **Estilo del fondo** y **Quitar imagen**. Con una imagen
+personalizada hay tres que se pisan entre sí:
 
-Mosaicos pequeños en la fila SISTEMA para lo que se cambia a menudo sin abrir Ajustes:
-tema, fondo on/off, acceso a notificaciones, recargar apps, usar como inicio. Cada uno es un
-mosaico normal: foco con cruceta y A para activar.
+- **"Tema" y "Estilo del fondo" parecen lo mismo** (los dos eligen oscuro/claro), pero el
+  estilo además cambia el tema de toda la interfaz, cosa que el nombre no dice.
+- **"Fondo" (activado/desactivado) convive con "Imagen de fondo"**: no queda claro si
+  desactivar el fondo borra la imagen o solo la esconde.
+- **"Quitar imagen" es una acción destructiva permanente** en la lista, y solo tiene sentido
+  cuando hay imagen propia.
+- **Con la imagen puesta y el fondo desactivado, el tema sigue siguiendo el brillo de la foto**
+  aunque la foto no se vea: comportamiento inesperado.
+- **Sin imagen propia, "Estilo del fondo" no aporta nada**: duplica "Tema".
 
-### 4. Menú por app (long press)
+**Propuesta**
+Dejar **dos filas** y un diálogo:
 
-Un diálogo por app con: abrir, info de la app (Ajustes del sistema), desinstalar, fijar en
-Favoritos, mover de categoría. Ahora el long press solo mueve de categoría.
+- **Fondo de pantalla** → resume el estado actual y abre un diálogo con:
+  - Incluido (con el tema actual)
+  - Imagen de la galería
+  - Sin fondo
+  - (solo si hay imagen propia) Quitar imagen
+- **Tema** → Oscuro / Claro. Con imagen propia, el tema elegida también manda sobre el velo.
+
+**Reglas de coherencia**
+- El tema automático por brillo de la foto **solo actúa si el fondo se está viendo**: con "sin
+  fondo" o con el fondo incluido manda el tema que eligió el usuario.
+- Si el usuario fija el tema a mano con una imagen puesta, se recuerda como *override* de esa
+  imagen y no se le vuelve a imponer el automático en el siguiente arranque.
+- El diálogo comunica el resultado: *"Fondo: imagen de la galería · tema automático (claro)"*.
+
+**Qué se elimina**
+Las filas "Estilo del fondo" y "Quitar imagen", y el valor "Personalizada / Incluida" de la
+fila de imagen: pasan a vivir dentro del diálogo.
+
+**Estimación**: 1 sesión. Toca `SettingsActivity` (filas y diálogo), `BackgroundManager`
+(eliminación del concepto de estilo y del override automático) y `MainActivity` (respetar el
+override al arrancar y que el fondo apagado no fuerce el tema).
+
+**Criterios de aceptación**
+1. Solo dos filas en APARIENCIA relacionadas con fondo y tema.
+2. Un único sitio para elegir imagen, quitarla y desactivarla.
+3. El estado actual se lee de un vistazo: "imagen de la galería", "fondo incluido" o "sin fondo".
+4. Sin fondo, la foto deja de influir en el tema.
+5. Si el usuario fija el tema a mano, se respeta aunque la foto sea más clara u oscura.
 
 ---
 
-## Prioridad 2 — información y control
+## 3. Menú por app (long press)
 
-### 5. Anillo de batería en el panel (detalle)
+Un diálogo por app con: abrir, info de la app (Ajustes del sistema), desinstalar, fijar en
+Favoritos y mover de categoría. Ahora el long press solo mueve de categoría.
+
+- **A** en la fila → ejecuta la acción elegida.
+- **B** → cerrar sin hacer nada.
+
+---
+
+## 4. Anillo de batería en el panel
 
 **Qué es**
 En la fila SISTEMA, un medidor circular (anillo) con el nivel de batería dibujado como arco y
@@ -150,59 +193,10 @@ para el refresco.
 4. Es legible en tema claro y en tema oscuro.
 5. Si el tiempo restante no es fiable, no se muestra.
 
-### 6. Tarjeta de red
-
-Tarjeta compacta con el estado de Wi-Fi (SSID y señal) y el tipo de conexión. En una portátil
-que se usa de pie, saber si está en la red de casa evita sorpresas al abrir una app.
-
-### 7. Diagnóstico de rendimiento con botón "copiar"
-
-Pantalla de Ajustes con datos reales: tiempo de arranque, si la caché sirvió, número de apps e
-iconos, tamaño de la caché en disco, tiempo de escaneo, y frames por segundo aproximados.
-Botón "copiar" para pegarlo en un issue de GitHub. Es la forma rápida de detectar en la consola
-real si algo va lento (el emulador no sirve para medir el Tegra 4).
-
-### 8. Tamaño de mosaico configurable
-
-Opción de 4, 5 o 6 columnas y mosaico 1×1 o 2×2 para Favoritos/RECIENTES. En una pantalla de
-5" se puede ver mejor con 4 columnas y letra grande; con muchas apps, 6 columnas entran más.
-
-### 9. Exportar e importar ajustes
-
-Favoritos, categorías y preferencias en un JSON que se pueda copiar a un archivo o compartir.
-Sirve para reinstalar sin perder la configuración o para llevar la misma a otra consola.
-
 ---
 
-## Prioridad 3 — comodidad y robustez
+## 5. Detalles del panel
 
-### 10. Autoactualizador desde GitHub Releases
-
-La consola no tiene navegador cómodo. La app podría consultar un JSON de releases, descargar
-el APK nuevo en la microSD y pedir al usuario que lo instale. En Android 5.1 se puede lanzar el
-instalador del sistema sobre el archivo; el usuario confirma el "origen desconocido".
-
-### 11. Búsqueda local de apps
-
-Búsqueda por texto (teclado en pantalla) sobre la lista de apps, con resultados en rejilla.
-Complementa a la navegación por categorías cuando hay muchas apps instaladas.
-
-### 12. Gestión de la caché de iconos
-
-Fila en Ajustes con el tamaño ocupado por la caché, botón para borrarla y opción de reconstruirla.
-Útil si la consola va justa de almacenamiento interno.
-
-### 13. Detalles del panel
-
-Reloj configurable de 12/24 h, fecha con formato corto (mié 21), y opción de ocultar el panel
-si se prefiere solo apps.
-
----
-
-## Cómo se tacklea cada punto
-
-1. Un punto por versión, con `versionCode` siempre creciente y el APK firmado con la misma clave.
-2. Cada punto se prueba en el emulador API 22 (1280×720 @ 320 dpi) y, si toca el arranque o la
-   memoria, se mide con el diagnóstico del punto 7.
-3. Lo que se toca en la consola real se anota aquí como "pendiente de hardware".
-4. Nada de esto está implementado todavía: es una lista de trabajo, no una promesa.
+- Reloj configurable de 12 o 24 h.
+- Fecha con formato corto ("mié 21") o formato largo ("miércoles 21 de octubre").
+- Opción de ocultar el panel si se prefiere solo la rejilla de apps.
