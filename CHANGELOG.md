@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.1
+
+- **Anillo de batería** en el panel: nivel como arco de 270 %, porcentaje en el centro, color
+  por nivel y tiempo restante estimado (con la tasa de descarga observada, porque en API 22
+  no existe `BATTERY_PROPERTY_TIME_REMAINNING`).
+- **Reloj analógico pequeño en la cabecera**, con fecha larga y hora en 24 h.
+- **Pista de controles flotante**: aparece al arrancar, se desvanece a los ~6 s y vuelve si
+  pulsas una tecla sin asignar.
+- **Mosaico de Avisos** con el total de notificaciones, lista por app, Y para descartar los de
+  esa app y X para descartarlos todos.
+- **Menú por app** (long press): abrir, favorito, mover de categoría, info de la app y
+  desinstalar.
+- **Ajustes de fondo y tema unificados**: dos filas ("Tema" y "Fondo de pantalla") y un diálogo
+  con Incluido / Imagen de la galería / Sin fondo / Quitar imagen. El tema automático por
+  brillo solo actúa si el fondo se ve y el tema manual se respeta.
+- Corrección: las notificaciones se contaban en un hilo secondary, así que los contadores no se
+  refrescaban en vivo; ahora todo se actualiza en el hilo principal.
+- Las secciones se actualizan en sitio al añadir o quitar favoritos y al cambiar de categoría.
+
 ## 1.0 — primer alcance completo
 
 - **Selector de imagen de fondo** desde la galería del sistema, solo para el launcher.

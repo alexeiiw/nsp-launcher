@@ -12,6 +12,7 @@ import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -35,7 +36,10 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Set;
 
@@ -56,7 +60,6 @@ public class MainActivity extends Activity {
 
     private SharedPreferences prefs;
     private boolean isLight;
-    private boolean bgEnabled;
     private AppRepository repo;
     private final Handler ui = new Handler(Looper.getMainLooper());
 
@@ -82,6 +85,21 @@ public class MainActivity extends Activity {
     private BroadcastReceiver packageReceiver;
     private IconStore iconStore;
     private Bitmap customBackgroundBitmap;
+    private Tile notificationTile;
+
+    private ClockView headerClock;
+    private TextView headerDate;
+    private TextView headerTime;
+    private TextView hintOverlay;
+    private boolean hintShown;
+    private BroadcastReceiver batteryReceiver;
+    private int batteryPercent = 0;
+    private boolean batteryCharging;
+    private String batteryStatus = "";
+    private final SimpleDateFormat headerDateFormat =
+            new SimpleDateFormat("EEEE d 'de' MMMM", new Locale("es", "ES"));
+    private final SimpleDateFormat headerTimeFormat =
+            new SimpleDateFormat("HH:mm", new Locale("es", "ES"));
 
     private final Runnable packageReload = new Runnable() {
         public void run() {
@@ -118,7 +136,6 @@ public class MainActivity extends Activity {
             prefs.edit().putBoolean("light", effectiveLight).apply();
         }
         isLight = effectiveLight;
-        bgEnabled = prefs.getBoolean("background", true);
         setTheme(isLight ? R.style.AppThemeLight : R.style.AppThemeDark);
         super.onCreate(savedInstanceState);
 
@@ -126,6 +143,20 @@ public class MainActivity extends Activity {
         repo = new AppRepository(this);
         iconStore = new IconStore(this);
         weather = WeatherService.loadCached(this);
+
+        hintOverlay = new TextView(this);
+        hintOverlay.setText("A abrir  |  X favorito  |  Y mover  |  SELECT tema  |  START recargar");
+        hintOverlay.setTextSize(9);
+        hintOverlay.setTextColor(C_WHITE);
+        hintOverlay.setLetterSpacing(0.06f);
+        hintOverlay.setGravity(Gravity.CENTER);
+        hintOverlay.setPadding(dp(14), dp(8), dp(14), dp(8));
+        GradientDrawable pill = new GradientDrawable();
+        pill.setShape(GradientDrawable.RECTANGLE);
+        pill.setColor(0xCC101010);
+        pill.setCornerRadius(dp(18));
+        hintOverlay.setBackgroundDrawable(pill);
+        hintOverlay.setVisibility(View.GONE);
         if (savedInstanceState != null) {
             pendingFocus = savedInstanceState.getString("focusPkg");
         }
@@ -269,25 +300,49 @@ public class MainActivity extends Activity {
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(dp(24), dp(8), dp(24), dp(4));
+        header.setPadding(dp(24), dp(6), dp(24), dp(6));
 
         TextView title = new TextView(this);
         title.setText("NSP");
         title.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
-        title.setTextSize(30);
+        title.setTextSize(28);
         title.setLetterSpacing(0.04f);
         title.setTextColor(textColor());
         title.setSingleLine(true);
-        header.addView(title, new LinearLayout.LayoutParams(-2, -2));
+        header.addView(title, new LinearLayout.LayoutParams(0, -2, 1f));
 
-        TextView hint = new TextView(this);
-        hint.setText("A abrir  |  X favorito  |  Y mover  |  SELECT tema  |  START recargar");
-        hint.setTextSize(9);
-        hint.setTextColor(secondaryColor());
-        hint.setSingleLine(true);
-        hint.setEllipsize(TextUtils.TruncateAt.END);
-        hint.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
-        header.addView(hint, new LinearLayout.LayoutParams(0, -2, 1f));
+        LinearLayout headerRight = new LinearLayout(this);
+        headerRight.setOrientation(LinearLayout.HORIZONTAL);
+        headerRight.setGravity(Gravity.CENTER_VERTICAL);
+
+        headerClock = new ClockView(this);
+        headerClock.setColors(secondaryColor(), textColor(),
+                isLight ? 0xFF0050EF : 0xFF1BA1E2);
+        headerClock.setShowSeconds(prefs.getBoolean("clock_seconds", false));
+        LinearLayout.LayoutParams clockLp = new LinearLayout.LayoutParams(dp(44), dp(44));
+        clockLp.rightMargin = dp(8);
+        headerRight.addView(headerClock, clockLp);
+
+        LinearLayout headerText = new LinearLayout(this);
+        headerText.setOrientation(LinearLayout.VERTICAL);
+        headerText.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+
+        headerDate = new TextView(this);
+        headerDate.setTextSize(9);
+        headerDate.setTextColor(secondaryColor());
+        headerDate.setLetterSpacing(0.10f);
+        headerDate.setSingleLine(true);
+        headerText.addView(headerDate, new LinearLayout.LayoutParams(-2, -2));
+
+        headerTime = new TextView(this);
+        headerTime.setTextSize(16);
+        headerTime.setTextColor(textColor());
+        headerTime.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+        headerTime.setSingleLine(true);
+        headerText.addView(headerTime, new LinearLayout.LayoutParams(-2, -2));
+
+        headerRight.addView(headerText, new LinearLayout.LayoutParams(-2, -2));
+        header.addView(headerRight, new LinearLayout.LayoutParams(-2, -2));
 
         page.addView(header, new LinearLayout.LayoutParams(-1, -2));
 
@@ -302,17 +357,18 @@ public class MainActivity extends Activity {
         scroll.addView(content, new LinearLayout.LayoutParams(-1, -2));
         page.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1f));
 
-        if (bgEnabled) {
+        int backgroundMode = BackgroundManager.mode(this);
+        if (backgroundMode != BackgroundManager.MODE_NONE) {
             ImageView background = new ImageView(this);
-            if (BackgroundManager.hasCustom(this)) {
+            Bitmap custom = null;
+            if (backgroundMode == BackgroundManager.MODE_CUSTOM) {
                 if (customBackgroundBitmap == null) {
                     customBackgroundBitmap = BackgroundManager.load(this);
                 }
-                if (customBackgroundBitmap != null) {
-                    background.setImageBitmap(customBackgroundBitmap);
-                } else {
-                    background.setImageResource(isLight ? R.drawable.bg_light : R.drawable.bg_dark);
-                }
+                custom = customBackgroundBitmap;
+            }
+            if (custom != null) {
+                background.setImageBitmap(custom);
             } else {
                 background.setImageResource(isLight ? R.drawable.bg_light : R.drawable.bg_dark);
             }
@@ -325,6 +381,17 @@ public class MainActivity extends Activity {
         }
 
         root.addView(page, new FrameLayout.LayoutParams(-1, -1));
+
+        if (hintOverlay != null) {
+            FrameLayout.LayoutParams hintLp = new FrameLayout.LayoutParams(-2, -2,
+                    Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+            hintLp.bottomMargin = dp(18);
+            root.addView(hintOverlay, hintLp);
+            if (!prefs.getBoolean("hint_shown", false)) {
+                prefs.edit().putBoolean("hint_shown", true).apply();
+                showHint();
+            }
+        }
 
         addSystemSection();
         addRecentSection();
@@ -352,8 +419,8 @@ public class MainActivity extends Activity {
         });
 
         if (dashboard != null) {
-            dashboard.setSecondsEnabled(prefs.getBoolean("clock_seconds", false));
             dashboard.setWeather(weather);
+            dashboard.setBattery(batteryPercent, batteryCharging, batteryStatus);
             dashboard.refreshNow();
             if (resumed) dashboard.start();
         }
@@ -391,6 +458,18 @@ public class MainActivity extends Activity {
         tileParams.rightMargin = dp(6);
         row.addView(tile.view, tileParams);
         section.tiles.add(tile);
+
+        notificationTile = makeSystemTile("Avisos", R.mipmap.ic_notifications, 0xFF825A2C,
+                new Runnable() {
+                    public void run() {
+                        showNotificationDialog();
+                    }
+                });
+        LinearLayout.LayoutParams notificationParams = new LinearLayout.LayoutParams(dp(96), dp(96));
+        notificationParams.rightMargin = dp(6);
+        row.addView(notificationTile.view, notificationParams);
+        section.tiles.add(notificationTile);
+        updateNotificationBadge();
 
         dashboard = new Dashboard(this, isLight, prefs.getBoolean("clock_seconds", false),
                 new Runnable() {
@@ -704,7 +783,7 @@ public class MainActivity extends Activity {
 
         tile.setOnLongClickListener(new View.OnLongClickListener() {
             public boolean onLongClick(View v) {
-                showCategoryDialog(t.entry);
+                showAppMenu(t.entry);
                 return true;
             }
         });
@@ -760,6 +839,7 @@ public class MainActivity extends Activity {
     private final NotificationStore.Listener badgeListener = new NotificationStore.Listener() {
         public void onBadgeChanged(String pkg, int count) {
             updateBadges(pkg);
+            updateNotificationBadge();
         }
     };
 
@@ -837,6 +917,23 @@ public class MainActivity extends Activity {
         t.icon = icon;
         t.label = label;
 
+        TextView badge = new TextView(this);
+        badge.setTextSize(9);
+        badge.setTextColor(C_WHITE);
+        badge.setGravity(Gravity.CENTER);
+        badge.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        GradientDrawable bubble = new GradientDrawable();
+        bubble.setShape(GradientDrawable.OVAL);
+        bubble.setColor(0xFFE51400);
+        badge.setBackgroundDrawable(bubble);
+        badge.setVisibility(View.GONE);
+        FrameLayout.LayoutParams badgeLp = new FrameLayout.LayoutParams(dp(20), dp(20));
+        badgeLp.gravity = Gravity.TOP | Gravity.RIGHT;
+        badgeLp.topMargin = dp(6);
+        badgeLp.rightMargin = dp(6);
+        tile.addView(badge, badgeLp);
+        t.badge = badge;
+
         tile.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (t.action != null) t.action.run();
@@ -910,6 +1007,126 @@ public class MainActivity extends Activity {
         if (focusIndex >= s.tiles.size()) return null;
         Tile tile = s.tiles.get(focusIndex);
         return tile.entry == null ? null : tile.entry.pkg;
+    }
+
+    private void showHint() {
+        if (hintOverlay == null) return;
+        ui.removeCallbacks(hideHintRunnable);
+        hintOverlay.animate().cancel();
+        hintOverlay.setVisibility(View.VISIBLE);
+        hintOverlay.setAlpha(0f);
+        hintOverlay.animate().alpha(1f).setDuration(250).start();
+        ui.postDelayed(hideHintRunnable, 6000);
+    }
+
+    private void hideHint() {
+        if (hintOverlay == null) return;
+        hintOverlay.animate().cancel();
+        hintOverlay.animate().alpha(0f).setDuration(400).start();
+        ui.postDelayed(new Runnable() {
+            public void run() {
+                if (hintOverlay != null && hintOverlay.getAlpha() < 0.05f) {
+                    hintOverlay.setVisibility(View.GONE);
+                }
+            }
+        }, 420);
+    }
+
+    private final Runnable hideHintRunnable = new Runnable() {
+        public void run() {
+            hideHint();
+        }
+    };
+
+    private final Runnable headerTicker = new Runnable() {
+        public void run() {
+            updateHeaderClock();
+            ui.postDelayed(this, 10000);
+        }
+    };
+
+    private static boolean isInformativeKey(int code) {
+        switch (code) {
+            case KeyEvent.KEYCODE_VOLUME_UP:
+            case KeyEvent.KEYCODE_VOLUME_DOWN:
+            case KeyEvent.KEYCODE_MUTE:
+            case KeyEvent.KEYCODE_BRIGHTNESS_UP:
+            case KeyEvent.KEYCODE_BRIGHTNESS_DOWN:
+            case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+            case KeyEvent.KEYCODE_MEDIA_NEXT:
+            case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+            case KeyEvent.KEYCODE_MEDIA_STOP:
+            case KeyEvent.KEYCODE_BUTTON_MODE:
+            case KeyEvent.KEYCODE_BUTTON_C:
+            case KeyEvent.KEYCODE_BUTTON_Z:
+            case KeyEvent.KEYCODE_SEARCH:
+            case KeyEvent.KEYCODE_APP_SWITCH:
+            case KeyEvent.KEYCODE_FOCUS:
+            case KeyEvent.KEYCODE_CAMERA:
+            case KeyEvent.KEYCODE_SETTINGS:
+            case KeyEvent.KEYCODE_HELP:
+            case KeyEvent.KEYCODE_GUIDE:
+            case KeyEvent.KEYCODE_NOTIFICATION:
+            case KeyEvent.KEYCODE_ASSIST:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void updateHeaderClock() {
+        if (headerDate == null || headerTime == null) return;
+        Date now = new Date();
+        headerDate.setText(headerDateFormat.format(now).toUpperCase(new Locale("es", "ES")));
+        headerTime.setText(headerTimeFormat.format(now));
+    }
+
+    private void readBattery(Intent intent) {
+        if (intent == null) return;
+        int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+        int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0);
+        boolean charging = plugged != 0;
+        int percent = (level >= 0 && scale > 0)
+                ? (int) Math.round(level * 100f / scale) : 0;
+        updateBattery(percent, charging);
+    }
+
+    private void updateBattery(int percent, boolean charging) {
+        String status;
+        if (charging) {
+            status = "Cargando";
+        } else {
+            status = estimateBattery(percent);
+        }
+        batteryPercent = percent;
+        batteryCharging = charging;
+        batteryStatus = status;
+        if (dashboard != null) dashboard.setBattery(percent, charging, status);
+    }
+
+    private String estimateBattery(int percent) {
+        long now = System.currentTimeMillis();
+        int lastLevel = prefs.getInt("batt_level", -1);
+        long lastTime = prefs.getLong("batt_time", 0L);
+        String result = "";
+        if (lastLevel >= 0 && now > lastTime) {
+            float minutes = (now - lastTime) / 60000f;
+            float drop = lastLevel - percent;
+            if (minutes > 1f && drop > 0f) {
+                float perMinute = drop / minutes;
+                if (perMinute >= 0.25f) {
+                    int minutesLeft = Math.round((100 - percent) / perMinute);
+                    if (minutesLeft > 0 && minutesLeft < 24 * 60) {
+                        int hours = minutesLeft / 60;
+                        int mins = minutesLeft % 60;
+                        result = hours > 0 ? (hours + " h " + mins + " min") : (mins + " min");
+                    }
+                }
+            }
+        }
+        prefs.edit().putInt("batt_level", percent).putLong("batt_time", now).apply();
+        return result;
     }
 
     private Tile currentTile() {
@@ -1024,6 +1241,7 @@ public class MainActivity extends Activity {
                     }
                     return true;
                 default:
+                    if (isInformativeKey(code)) showHint();
                     break;
             }
         }
@@ -1120,6 +1338,201 @@ public class MainActivity extends Activity {
         if (t != null && t.entry != null) showCategoryDialog(t.entry);
     }
 
+    private void updateNotificationBadge() {
+        if (notificationTile == null || notificationTile.badge == null) return;
+        int total = NotificationStore.total();
+        if (total > 0) {
+            notificationTile.badge.setText(total > 99 ? "99+" : String.valueOf(total));
+            notificationTile.badge.setVisibility(View.VISIBLE);
+        } else {
+            notificationTile.badge.setVisibility(View.GONE);
+        }
+    }
+
+    private int selectedPosition(AlertDialog dialog) {
+        try {
+            android.widget.ListView list = dialog.getListView();
+            if (list == null && dialog.getWindow() != null) {
+                list = findListView(dialog.getWindow().getDecorView());
+            }
+            if (list == null) return -1;
+            int position = list.getSelectedItemPosition();
+            if (position < 0 && list.getCount() > 0) position = 0;
+            return position;
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    private android.widget.ListView findListView(View root) {
+        if (root == null) return null;
+        if (root instanceof android.widget.ListView) {
+            return (android.widget.ListView) root;
+        }
+        if (root instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) root;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                android.widget.ListView found = findListView(group.getChildAt(i));
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private void showNotificationDialog() {
+        final java.util.List<String> packages = NotificationStore.packages();
+        if (packages.isEmpty()) {
+            toast("No hay notificaciones");
+            return;
+        }
+        final String[] items = new String[packages.size()];
+        for (int i = 0; i < packages.size(); i++) {
+            AppEntry entry = findApp(apps, packages.get(i));
+            String name = entry == null ? packages.get(i) : entry.label;
+            items[i] = name + "  (" + NotificationStore.count(packages.get(i)) + ")";
+        }
+
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Notificaciones")
+                .setAdapter(new ArrayAdapter<String>(this,
+                        android.R.layout.simple_list_item_1, items) {
+                    @Override
+                    public View getView(int position, View convertView, ViewGroup parent) {
+                        TextView tv = (TextView) super.getView(position, convertView, parent);
+                        tv.setTextColor(isLight ? 0xFF111111 : 0xFFFFFFFF);
+                        tv.setTextSize(14);
+                        tv.setPadding(dp(20), dp(6), dp(20), dp(6));
+                        tv.setMinHeight(0);
+                        tv.setMinimumHeight(0);
+                        return tv;
+                    }
+                }, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface d, int which) {
+                        AppEntry entry = findApp(apps, packages.get(which));
+                        if (entry != null) open(entry);
+                    }
+                })
+                .create();
+
+        dialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
+            public boolean onKey(DialogInterface d, int keyCode, KeyEvent event) {
+                if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
+                if (keyCode == KeyEvent.KEYCODE_BUTTON_Y) {
+                    int position = selectedPosition(dialog);
+                    if (position >= 0 && position < packages.size()) {
+                        NotificationStore.clear(packages.get(position));
+                        toast("Avisos descartados");
+                    }
+                    d.dismiss();
+                    return true;
+                }
+                if (keyCode == KeyEvent.KEYCODE_BUTTON_X) {
+                    NotificationStore.clearAll();
+                    toast("Avisos descartados");
+                    d.dismiss();
+                    return true;
+                }
+                if (keyCode == KeyEvent.KEYCODE_BUTTON_B) {
+                    d.dismiss();
+                    return true;
+                }
+                return false;
+            }
+        });
+        dialog.show();
+    }
+
+    private void showAppMenu(final AppEntry entry) {
+        final boolean favorite = repo.isFavorite(entry.pkg);
+        final String[] items = new String[] {
+                "Abrir",
+                favorite ? "Quitar de Favoritos" : "Añadir a Favoritos",
+                "Mover de categoría",
+                "Info de la app",
+                "Desinstalar"
+        };
+
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(entry.label)
+                .setAdapter(new ArrayAdapter<String>(this,
+                        android.R.layout.simple_list_item_1, items) {
+                    @Override
+                    public View getView(int position, View convertView, ViewGroup parent) {
+                        TextView tv = (TextView) super.getView(position, convertView, parent);
+                        tv.setTextColor(isLight ? 0xFF111111 : 0xFFFFFFFF);
+                        tv.setTextSize(14);
+                        tv.setPadding(dp(20), dp(6), dp(20), dp(6));
+                        tv.setMinHeight(0);
+                        tv.setMinimumHeight(0);
+                        return tv;
+                    }
+                }, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface d, int which) {
+                        if (which == 0) {
+                            open(entry);
+                        } else if (which == 1) {
+                            boolean added = repo.toggleFavorite(entry.pkg);
+                            if (added) {
+                                addFavoriteInPlace(entry);
+                            } else {
+                                removeFavoriteInPlace(entry);
+                            }
+                            toast(added ? "Añadido a Favoritos" : "Quitado de Favoritos");
+                            restoreFocus(entry.pkg);
+                        } else if (which == 2) {
+                            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                public void run() {
+                                    showCategoryDialog(entry);
+                                }
+                            }, 150);
+                        } else if (which == 3) {
+                            try {
+                                Intent intent = new Intent(
+                                        android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        android.net.Uri.parse("package:" + entry.pkg));
+                                startActivity(intent);
+                            } catch (Exception ignored) {
+                                toast("No se pudo abrir la info de la app");
+                            }
+                        } else {
+                            confirmUninstall(entry);
+                        }
+                    }
+                })
+                .create();
+
+        dialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
+            public boolean onKey(DialogInterface d, int keyCode, KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_BUTTON_B && event.getAction() == KeyEvent.ACTION_DOWN) {
+                    d.dismiss();
+                    return true;
+                }
+                return false;
+            }
+        });
+        dialog.show();
+    }
+
+    private void confirmUninstall(final AppEntry entry) {
+        new AlertDialog.Builder(this)
+                .setTitle("Desinstalar " + entry.label + "?")
+                .setMessage("Se abrirá el desinstalador del sistema.")
+                .setPositiveButton("Desinstalar", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        try {
+                            Intent intent = new Intent(Intent.ACTION_DELETE,
+                                    android.net.Uri.parse("package:" + entry.pkg));
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
+                        } catch (Exception ignored) {
+                            toast("No se pudo abrir el desinstalador");
+                        }
+                    }
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
     private void showCategoryDialog(final AppEntry e) {
         final String[] items = new String[AppRepository.CATS.length + 1];
         System.arraycopy(AppRepository.CATS, 0, items, 0, AppRepository.CATS.length);
@@ -1184,10 +1597,11 @@ public class MainActivity extends Activity {
     private void toggleTheme() {
         isLight = !isLight;
         prefs.edit().putBoolean("light", isLight).apply();
-        if (BackgroundManager.hasCustom(this)) {
-            BackgroundManager.setStyle(this,
-                    isLight ? BackgroundManager.STYLE_LIGHT : BackgroundManager.STYLE_DARK);
+        if (BackgroundManager.mode(this) == BackgroundManager.MODE_CUSTOM) {
+            BackgroundManager.setThemeOverride(this,
+                    isLight ? BackgroundManager.THEME_LIGHT : BackgroundManager.THEME_DARK);
         }
+        prefs.edit().putBoolean("bg_changed", true).apply();
         recreate();
     }
 
@@ -1280,8 +1694,7 @@ public class MainActivity extends Activity {
         }
 
         boolean prefLight = prefs.getBoolean("light", false);
-        boolean prefBackground = prefs.getBoolean("background", true);
-        if (prefLight != isLight || prefBackground != bgEnabled) {
+        if (prefLight != isLight) {
             ui.post(new Runnable() {
                 public void run() {
                     recreate();
@@ -1291,7 +1704,6 @@ public class MainActivity extends Activity {
         }
 
         if (dashboard != null) {
-            dashboard.setSecondsEnabled(prefs.getBoolean("clock_seconds", false));
             WeatherData cached = WeatherService.loadCached(this);
             if (cached != null && (weather == null || cached.updated > weather.updated)) {
                 weather = cached;
@@ -1299,6 +1711,27 @@ public class MainActivity extends Activity {
             }
             dashboard.start();
             dashboard.refreshNow();
+        }
+
+        if (headerClock != null) {
+            headerClock.setShowSeconds(prefs.getBoolean("clock_seconds", false));
+            headerClock.setRunning(true);
+        }
+        updateHeaderClock();
+        updateNotificationBadge();
+        ui.removeCallbacks(headerTicker);
+        ui.postDelayed(headerTicker, 1000);
+
+        if (batteryReceiver == null) {
+            batteryReceiver = new BroadcastReceiver() {
+                public void onReceive(Context context, Intent intent) {
+                    readBattery(intent);
+                }
+            };
+        }
+        try {
+            registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        } catch (Exception ignored) {
         }
 
         if (recentsDirty) refreshRecents();
@@ -1321,6 +1754,13 @@ public class MainActivity extends Activity {
     protected void onPause() {
         resumed = false;
         NotificationStore.removeListener(badgeListener);
+        if (headerClock != null) headerClock.setRunning(false);
+        if (batteryReceiver != null) {
+            try {
+                unregisterReceiver(batteryReceiver);
+            } catch (Exception ignored) {
+            }
+        }
         if (dashboard != null) dashboard.stop();
         unregisterPackageReceiver();
         super.onPause();

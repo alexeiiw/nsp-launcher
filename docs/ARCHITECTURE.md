@@ -10,11 +10,15 @@ de apoyo para datos, iconos, clima y dibujo.
 MainActivity
 ├── AppRepository      paquetes, etiquetas, categorías, favoritos, recientes, caché
 ├── IconStore          iconos en memoria (LruCache) y disco (PNG)
+├── BackgroundManager   imagen de la galería, recorte, EXIF, brillo y modos
+├── NotificationStore   contadores por paquete y descarte (hilo principal)
 ├── Dashboard          tarjetas del panel
-│   ├── ClockView      reloj analógico (Canvas)
+│   ├── BatteryRingView medidor circular de batería (Canvas)
+│   ├── ClockView      reloj analógico (Canvas), usado en grande y en la cabecera
 │   ├── WeatherIconView iconos de clima (Canvas)
 │   └── Bar            barras de memoria
-└── SettingsActivity   ajustes y alias HOME
+├── SettingsActivity   ajustes y alias HOME
+└── NotificationService listener del sistema (solo conteo)
 ```
 
 ## Arranque y caché
@@ -53,7 +57,8 @@ Sin caché (primer arranque) se muestra "CARGANDO APLICACIONES" y se hace el esc
 
 ## UI y foco
 
-- `Sistema` contiene el mosaico Ajustes y el `Dashboard`.
+- `Sistema` contiene los mosaicos **Ajustes** y **Avisos**, y el `Dashboard` con las tarjetas
+  de fecha, batería, clima y memoria.
 - `RECIENTES`, `Favoritos` y categorías son secciones con encabezado y una **rejilla de 5 columnas**.
 - Cada sección guarda su contenedor, rejilla y cabecera para poder insertar/eliminar en sitio.
 - El foco es lógico (`focusSection`, `focusIndex`), no depende del `focusSearch` de Android.
@@ -112,6 +117,42 @@ Sin caché (primer arranque) se muestra "CARGANDO APLICACIONES" y se hace el esc
   se recrea al detectar el cambio en `onResume`.
 - Sin parallax, blur en tiempo real ni live wallpaper.
 
+## Cabecera y pista de controles
+
+- La cabecera lleva el título `NSP` y, a la derecha, un `ClockView` de 44 dp con la fecha larga
+  (`miércoles 21 de octubre`) y la hora en 24 h. Ambas se refrescan cada 10 s.
+- La pista de controles (`A abrir | X favorito | …`) es una vista flotante sobre la rejilla:
+  aparece al construir la UI por primera vez, se atenúa a los 6 s y vuelve a mostrarse cuando
+  llega una tecla sin asignar (volumen, NVIDIA, medios…).
+
+## Anillo de batería
+
+- `BatteryRingView` dibuja un arco de 270° con el nivel y el porcentaje en el centro.
+- Los datos llegan por el broadcast `ACTION_BATTERY_CHANGED` (nivel, carga, voltaje) y por un
+  refresco periódico; no hay permisos ni sondeos.
+- El tiempo restante no existe en API 22 (`BATTERY_PROPERTY_TIME_REMAINNING` es API 28): se
+  estima con la tasa de descarga observada (media móvil del % por minuto guardada en
+  `SharedPreferences`) y se omite si el dato no es fiable.
+- Si la batería llega antes de que exista el panel, el estado se guarda y se aplica al
+  construirlo.
+
+## Mosaico de Avisos
+
+- `NotificationService` cuenta las claves de notificación vivas por paquete, ignorando las
+  `ongoing` y los resúmenes de grupo.
+- `NotificationStore` guarda esas claves y **notifica siempre en el hilo principal**: las
+  callbacks del listener llegan por un hilo de binder y tocar la UI desde ahí falla.
+- El mosaico **Avisos** muestra el total; al pulsarlo se abre la lista por app. Con el foco en
+  una fila, **Y** descarta los avisos de esa app y **X** los descarta todos
+  (`NotificationListenerService.cancelNotification`, API 21).
+
+## Menú por app
+
+- Long press sobre un mosaico: abrir, añadir/quitar de Favoritos, mover de categoría, info de
+  la app (`ACTION_APPLICATION_DETAILS_SETTINGS`) y desinstalar (con confirmación y
+  `ACTION_DELETE`).
+- Cada acción actualiza la rejilla en sitio, sin reconstruir la pantalla.
+
 ## Imagen de fondo personalizada
 
 - Ajustes lanza `ACTION_GET_CONTENT` (`image/*`) y recibe el URI en `onActivityResult`.
@@ -119,13 +160,24 @@ Sin caché (primer arranque) se muestra "CARGANDO APLICACIONES" y se hace el esc
   corrige la orientación EXIF, recorta al centro a 1280×720 y guarda
   `files/custom_background.jpg`.
 - Calcula el brillo medio y lo guarda en `bg_luminance`.
-- `bg_style` puede ser automático, oscuro o claro. En automático, `effectiveLight` usa el
-  brillo (≥ 0.55 → tema claro) antes de `setTheme`; en manual fuerza el tema elegido.
+- `bg_mode` define el fondo: `MODE_BUNDLED` (incluido), `MODE_CUSTOM` (imagen de la galería) o
+  `MODE_NONE` (sin fondo). `bg_theme_override` guarda el tema forzado sobre la foto
+  (`THEME_AUTO` por defecto).
+- `effectiveLight` decide el tema antes de `setTheme`: con imagen y override automático usa el
+  brillo (≥ 0.55 → tema claro); si el fondo no se está viendo manda el tema del usuario.
 - El velo sigue al tema: 70 % blanco en claro y 60 % negro en oscuro.
 - `bg_changed` avisa a `MainActivity` para recrearse y recargar la imagen.
 - La imagen solo se usa en el launcher; Ajustes y el lockscreen no la usan.
 - Sin permiso de almacenamiento: se lee el URI concedido por el selector y se copia al instante.
-- Si se elimina, vuelven los fondos incluidos según el tema.
+- Si se elimina, vuelve el fondo incluido según el tema.
+
+## Ajustes
+
+- `SettingsActivity` muestra la sección APARIENCIA con dos filas: **Tema** y **Fondo de pantalla**.
+- El diálogo de fondo ofrece *Incluido (tema actual)*, *Imagen de la galería*, *Sin fondo* y
+  *Quitar imagen* (solo si hay una propia).
+- Cambiar el tema con una imagen puesta fija el `bg_theme_override`, de modo que el automático
+  no lo pise al arrancar.
 
 ## Launcher (HOME)
 

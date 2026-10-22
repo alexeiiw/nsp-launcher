@@ -1,5 +1,6 @@
 # Build output
 build/
+backups/
 dist/
 *.apk
 *.idsig

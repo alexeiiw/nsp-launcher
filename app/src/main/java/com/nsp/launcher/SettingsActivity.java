@@ -10,12 +10,16 @@ import android.provider.MediaStore;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -23,6 +27,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
@@ -39,9 +44,6 @@ public class SettingsActivity extends Activity {
     private TextView weatherStatus;
     private TextView notificationValue;
     private TextView backgroundValue;
-    private TextView backgroundImageValue;
-    private TextView backgroundStyleValue;
-    private TextView removeImageValue;
 
     private static final int REQ_PICK_IMAGE = 1001;
 
@@ -98,38 +100,20 @@ public class SettingsActivity extends Activity {
             public void run() {
                 isLight = !isLight;
                 prefs.edit().putBoolean("light", isLight).apply();
-                if (BackgroundManager.hasCustom(SettingsActivity.this)) {
-                    BackgroundManager.setStyle(SettingsActivity.this,
-                            isLight ? BackgroundManager.STYLE_LIGHT : BackgroundManager.STYLE_DARK);
+                if (BackgroundManager.mode(SettingsActivity.this)
+                        == BackgroundManager.MODE_CUSTOM) {
+                    BackgroundManager.setThemeOverride(SettingsActivity.this,
+                            isLight ? BackgroundManager.THEME_LIGHT : BackgroundManager.THEME_DARK);
                 }
+                prefs.edit().putBoolean("bg_changed", true).apply();
                 recreate();
             }
         });
         themeValue = themeRowValue;
 
-        backgroundValue = addRow(content, "Fondo", "", new Runnable() {
+        backgroundValue = addRow(content, "Fondo de pantalla", "", new Runnable() {
             public void run() {
-                boolean enabled = !prefs.getBoolean("background", true);
-                prefs.edit().putBoolean("background", enabled).apply();
-                updateValues();
-            }
-        });
-
-        backgroundImageValue = addRow(content, "Imagen de fondo", "", new Runnable() {
-            public void run() {
-                pickBackgroundImage();
-            }
-        });
-
-        backgroundStyleValue = addRow(content, "Estilo del fondo", "", new Runnable() {
-            public void run() {
-                cycleBackgroundStyle();
-            }
-        });
-
-        removeImageValue = addRow(content, "Quitar imagen", "", new Runnable() {
-            public void run() {
-                removeBackgroundImage();
+                showBackgroundDialog();
             }
         });
 
@@ -196,7 +180,7 @@ public class SettingsActivity extends Activity {
         });
 
         TextView footer = new TextView(this);
-        footer.setText("NSP 1.0\nAndroid 5.1 · " + WeatherService.CITY);
+        footer.setText("NSP 1.1\nAndroid 5.1 · " + WeatherService.CITY);
         footer.setTextSize(9);
         footer.setTextColor(isLight ? 0xFF888888 : 0xFF777777);
         footer.setPadding(dp(24), dp(20), dp(24), dp(24));
@@ -286,24 +270,14 @@ public class SettingsActivity extends Activity {
     private void updateValues() {
         if (themeValue != null) themeValue.setText(isLight ? "Claro" : "Oscuro");
         if (backgroundValue != null) {
-            backgroundValue.setText(prefs.getBoolean("background", true) ? "Activado" : "Desactivado");
-        }
-        if (backgroundImageValue != null) {
-            backgroundImageValue.setText(BackgroundManager.hasCustom(this)
-                    ? "Personalizada" : "Incluida");
-        }
-        if (backgroundStyleValue != null) {
-            int style = BackgroundManager.style(this);
-            if (style == BackgroundManager.STYLE_DARK) {
-                backgroundStyleValue.setText("Oscuro");
-            } else if (style == BackgroundManager.STYLE_LIGHT) {
-                backgroundStyleValue.setText("Claro");
+            int mode = BackgroundManager.mode(this);
+            if (mode == BackgroundManager.MODE_CUSTOM && BackgroundManager.hasCustom(this)) {
+                backgroundValue.setText("Galería");
+            } else if (mode == BackgroundManager.MODE_NONE) {
+                backgroundValue.setText("Sin fondo");
             } else {
-                backgroundStyleValue.setText("Automático");
+                backgroundValue.setText("Incluido");
             }
-        }
-        if (removeImageValue != null) {
-            removeImageValue.setText(BackgroundManager.hasCustom(this) ? "Quitar" : "—");
         }
         if (secondsValue != null) {
             secondsValue.setText(prefs.getBoolean("clock_seconds", false) ? "Sí" : "No");
@@ -391,6 +365,65 @@ public class SettingsActivity extends Activity {
         dialog.show();
     }
 
+    private void showBackgroundDialog() {
+        final ArrayList<String> labels = new ArrayList<String>();
+        final ArrayList<Integer> actions = new ArrayList<Integer>();
+
+        labels.add("Incluido (tema actual)");
+        actions.add(0);
+        labels.add("Imagen de la galería");
+        actions.add(1);
+        labels.add("Sin fondo");
+        actions.add(2);
+        if (BackgroundManager.hasCustom(this)) {
+            labels.add("Quitar imagen");
+            actions.add(3);
+        }
+
+        final String[] items = labels.toArray(new String[labels.size()]);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Fondo de pantalla");
+        builder.setAdapter(new ArrayAdapter<String>(this,
+                android.R.layout.simple_list_item_1, items) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                TextView tv = (TextView) super.getView(position, convertView, parent);
+                tv.setTextColor(isLight ? 0xFF111111 : 0xFFFFFFFF);
+                tv.setTextSize(14);
+                tv.setPadding(dp(20), dp(6), dp(20), dp(6));
+                tv.setMinHeight(0);
+                tv.setMinimumHeight(0);
+                return tv;
+            }
+        }, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                int action = actions.get(which);
+                if (action == 0) {
+                    BackgroundManager.setMode(SettingsActivity.this,
+                            BackgroundManager.MODE_BUNDLED);
+                    prefs.edit().putBoolean("bg_changed", true).apply();
+                    updateValues();
+                } else if (action == 1) {
+                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                        public void run() {
+                            pickBackgroundImage();
+                        }
+                    }, 150);
+                } else if (action == 2) {
+                    BackgroundManager.setMode(SettingsActivity.this, BackgroundManager.MODE_NONE);
+                    prefs.edit().putBoolean("bg_changed", true).apply();
+                    updateValues();
+                } else {
+                    BackgroundManager.clearCustom(SettingsActivity.this);
+                    prefs.edit().putBoolean("bg_changed", true).apply();
+                    updateValues();
+                }
+            }
+        });
+        builder.show();
+    }
+
     private void pickBackgroundImage() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("image/*");
@@ -407,42 +440,6 @@ public class SettingsActivity extends Activity {
         }
     }
 
-    private void cycleBackgroundStyle() {
-        int current = BackgroundManager.style(this);
-        int next = (current + 1) % 3;
-        BackgroundManager.setStyle(this, next);
-
-        boolean light = isLight;
-        if (next == BackgroundManager.STYLE_DARK) {
-            light = false;
-        } else if (next == BackgroundManager.STYLE_LIGHT) {
-            light = true;
-        } else if (BackgroundManager.hasCustom(this)) {
-            light = BackgroundManager.luminance(this) >= 0.55f;
-        }
-
-        prefs.edit().putBoolean("bg_changed", true).apply();
-        if (light != isLight) {
-            isLight = light;
-            prefs.edit().putBoolean("light", light).apply();
-            recreate();
-        } else {
-            updateValues();
-            toast("Estilo del fondo actualizado");
-        }
-    }
-
-    private void removeBackgroundImage() {
-        if (!BackgroundManager.hasCustom(this)) {
-            toast("No hay imagen personalizada");
-            return;
-        }
-        BackgroundManager.clearCustom(this);
-        prefs.edit().putBoolean("bg_changed", true).apply();
-        updateValues();
-        toast("Imagen eliminada");
-    }
-
     private void importBackground(final Uri uri) {
         toast("Procesando imagen...");
         new Thread(new Runnable() {
@@ -453,19 +450,18 @@ public class SettingsActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         public void run() {
                             if (isFinishing()) return;
-                            if (BackgroundManager.style(SettingsActivity.this)
-                                    == BackgroundManager.STYLE_AUTO) {
+                            prefs.edit().putBoolean("bg_changed", true).apply();
+                            if (BackgroundManager.themeOverride(SettingsActivity.this)
+                                    == BackgroundManager.THEME_AUTO) {
                                 boolean light = luminance >= 0.55f;
                                 if (light != isLight) {
                                     isLight = light;
                                     prefs.edit().putBoolean("light", light).apply();
-                                    prefs.edit().putBoolean("bg_changed", true).apply();
                                     updateValues();
                                     recreate();
                                     return;
                                 }
                             }
-                            prefs.edit().putBoolean("bg_changed", true).apply();
                             updateValues();
                             toast("Fondo actualizado");
                         }

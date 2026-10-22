@@ -36,8 +36,8 @@ public class Dashboard extends LinearLayout {
     private final TextView weekdayView;
     private final TextView dayView;
     private final TextView monthView;
-    private final TextView digitalView;
-    private final ClockView clock;
+    private final BatteryRingView ring;
+    private final TextView batteryStatus;
     private final TextView cityView;
     private final TextView tempView;
     private final TextView conditionView;
@@ -95,23 +95,23 @@ public class Dashboard extends LinearLayout {
         dateCard.addView(monthView, new LayoutParams(-1, -2));
         addView(dateCard);
 
-        LinearLayout clockCard = newCard(0.95f, surface());
-        clockCard.setGravity(Gravity.CENTER);
-        clock = new ClockView(ctx);
-        clock.setColors(secondaryColor(), textColor(), accent);
-        clock.setShowSeconds(showSeconds);
-        LayoutParams clockParams = new LayoutParams(dp(58), dp(58));
-        clockParams.gravity = Gravity.CENTER_HORIZONTAL;
-        clockCard.addView(clock, clockParams);
+        LinearLayout batteryCard = newCard(0.95f, surface());
+        batteryCard.setGravity(Gravity.CENTER);
+        ring = new BatteryRingView(ctx);
+        ring.setColors(light ? 0xFFD2D2D2 : 0xFF2C2C2C, textColor());
+        LayoutParams ringParams = new LayoutParams(dp(56), dp(56));
+        ringParams.gravity = Gravity.CENTER_HORIZONTAL;
+        batteryCard.addView(ring, ringParams);
 
-        digitalView = new TextView(ctx);
-        digitalView.setTextSize(10);
-        digitalView.setTextColor(textColor());
-        digitalView.setGravity(Gravity.CENTER);
-        LayoutParams digitalParams = new LayoutParams(-1, -2);
-        digitalParams.topMargin = dp(2);
-        clockCard.addView(digitalView, digitalParams);
-        addView(clockCard);
+        batteryStatus = new TextView(ctx);
+        batteryStatus.setTextSize(8);
+        batteryStatus.setTextColor(secondaryColor());
+        batteryStatus.setGravity(Gravity.CENTER);
+        batteryStatus.setSingleLine(true);
+        LayoutParams batteryParams = new LayoutParams(-1, -2);
+        batteryParams.topMargin = dp(2);
+        batteryCard.addView(batteryStatus, batteryParams);
+        addView(batteryCard);
 
         LinearLayout weatherCard = newCard(1.38f, 0xFF0050EF);
         weatherCard.setClickable(true);
@@ -252,10 +252,6 @@ public class Dashboard extends LinearLayout {
         return row;
     }
 
-    public void setSecondsEnabled(boolean enabled) {
-        clock.setShowSeconds(enabled);
-    }
-
     public void start() {
         running = true;
         handler.removeCallbacks(ticker);
@@ -263,19 +259,22 @@ public class Dashboard extends LinearLayout {
         updateDate();
         updateMemory();
         handler.postDelayed(ticker, 10000);
-        clock.setRunning(true);
     }
 
     public void stop() {
         running = false;
         handler.removeCallbacks(ticker);
-        clock.setRunning(false);
     }
 
     public void refreshNow() {
         updateDate();
         updateMemory();
-        clock.invalidate();
+    }
+
+    public void setBattery(int percent, boolean charging, String status) {
+        ring.setLevel(percent);
+        ring.setCharging(charging);
+        batteryStatus.setText(status == null ? "" : status);
     }
 
     public void setWeather(WeatherData data) {
@@ -316,7 +315,6 @@ public class Dashboard extends LinearLayout {
         dayView.setText(String.valueOf(now.get(Calendar.DAY_OF_MONTH)));
         weekdayView.setText(weekdayFormat.format(now.getTime()).toUpperCase(locale));
         monthView.setText(monthFormat.format(now.getTime()).toUpperCase(locale));
-        digitalView.setText(timeFormat.format(now.getTime()));
     }
 
     private void updateMemory() {

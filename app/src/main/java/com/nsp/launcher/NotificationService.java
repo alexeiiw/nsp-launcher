@@ -11,7 +11,31 @@ import java.util.Set;
 
 public class NotificationService extends NotificationListenerService {
 
+    private static NotificationService instance;
+
     private final Map<String, Set<String>> keys = new HashMap<String, Set<String>>();
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        instance = this;
+    }
+
+    @Override
+    public void onDestroy() {
+        if (instance == this) instance = null;
+        super.onDestroy();
+    }
+
+    /** Cancela una notificación concreta (usado por el mosaico de avisos). */
+    public static void cancelKey(String key) {
+        NotificationService service = instance;
+        if (service == null || key == null) return;
+        try {
+            service.cancelNotification(key);
+        } catch (Exception ignored) {
+        }
+    }
 
     private boolean isCounted(StatusBarNotification sbn) {
         if (sbn == null) return false;
@@ -33,9 +57,8 @@ public class NotificationService extends NotificationListenerService {
             set = new HashSet<String>();
             keys.put(pkg, set);
         }
-        if (set.add(key)) {
-            NotificationStore.setCount(pkg, set.size());
-        }
+        set.add(key);
+        NotificationStore.setKeys(pkg, set);
     }
 
     @Override
@@ -48,13 +71,17 @@ public class NotificationService extends NotificationListenerService {
         Set<String> set = keys.get(pkg);
         if (set == null) return;
         set.remove(key);
-        if (set.isEmpty()) keys.remove(pkg);
-        NotificationStore.setCount(pkg, set.size());
+        if (set.isEmpty()) {
+            keys.remove(pkg);
+            NotificationStore.setKeys(pkg, null);
+        } else {
+            NotificationStore.setKeys(pkg, set);
+        }
     }
 
     @Override
     public void onListenerDisconnected() {
         keys.clear();
-        NotificationStore.clearAll();
+        NotificationStore.reset();
     }
 }

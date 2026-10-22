@@ -14,9 +14,17 @@ import java.io.InputStream;
 
 public final class BackgroundManager {
 
-    public static final int STYLE_AUTO = 0;
-    public static final int STYLE_DARK = 1;
-    public static final int STYLE_LIGHT = 2;
+    /** Fondo incluido, con el tema vigente. */
+    public static final int MODE_BUNDLED = 0;
+    /** Imagen elegida por el usuario en la galería. */
+    public static final int MODE_CUSTOM = 1;
+    /** Sin fondo: color plano. */
+    public static final int MODE_NONE = 2;
+
+    /** El tema lo decide el brillo de la imagen. */
+    public static final int THEME_AUTO = -1;
+    public static final int THEME_DARK = 0;
+    public static final int THEME_LIGHT = 1;
 
     private static final String PREFS = "nsp";
     private static final String FILE_NAME = "custom_background.jpg";
@@ -39,31 +47,47 @@ public final class BackgroundManager {
         return file.exists() && file.length() > 0L;
     }
 
-    public static int style(Context context) {
-        return prefs(context).getInt("bg_style", STYLE_AUTO);
+    /** Modo de fondo: incluido, imagen de la galería o sin fondo. */
+    public static int mode(Context context) {
+        return prefs(context).getInt("bg_mode", MODE_BUNDLED);
     }
 
-    public static void setStyle(Context context, int style) {
-        prefs(context).edit().putInt("bg_style", style).apply();
+    public static void setMode(Context context, int mode) {
+        prefs(context).edit().putInt("bg_mode", mode).apply();
+    }
+
+    /** Tema forzado sobre la imagen; -1 significa automático. */
+    public static int themeOverride(Context context) {
+        return prefs(context).getInt("bg_theme_override", THEME_AUTO);
+    }
+
+    public static void setThemeOverride(Context context, int value) {
+        prefs(context).edit().putInt("bg_theme_override", value).apply();
     }
 
     public static float luminance(Context context) {
         return prefs(context).getFloat("bg_luminance", 0.5f);
     }
 
+    /** Tema efectivo con el que se pinta el launcher. */
     public static boolean effectiveLight(Context context) {
-        if (!hasCustom(context)) {
-            return prefs(context).getBoolean("light", false);
+        boolean manual = prefs(context).getBoolean("light", false);
+        if (mode(context) != MODE_CUSTOM || !hasCustom(context)) {
+            return manual;
         }
-        int style = style(context);
-        if (style == STYLE_DARK) return false;
-        if (style == STYLE_LIGHT) return true;
+        int override = themeOverride(context);
+        if (override == THEME_DARK) return false;
+        if (override == THEME_LIGHT) return true;
         return luminance(context) >= 0.55f;
     }
 
     public static void clearCustom(Context context) {
         customFile(context).delete();
-        prefs(context).edit().remove("bg_luminance").putBoolean("bg_changed", true).apply();
+        prefs(context).edit()
+                .remove("bg_luminance")
+                .putInt("bg_mode", MODE_BUNDLED)
+                .putInt("bg_theme_override", THEME_AUTO)
+                .apply();
     }
 
     public static Bitmap load(Context context) {
@@ -113,6 +137,8 @@ public final class BackgroundManager {
 
             prefs(context).edit()
                     .putFloat("bg_luminance", luminance)
+                    .putInt("bg_mode", MODE_CUSTOM)
+                    .putInt("bg_theme_override", THEME_AUTO)
                     .putBoolean("bg_changed", true)
                     .apply();
             return luminance;

@@ -74,23 +74,24 @@ public class ClockView extends View {
 
         float cx = width / 2f;
         float cy = height / 2f;
-        float radius = size / 2f - dp(3f);
+        float radius = size / 2f - dp(1.5f);
+        if (radius <= 0f) return;
 
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeCap(Paint.Cap.BUTT);
-        paint.setStrokeWidth(dp(1f));
+        paint.setStrokeWidth(radius * 0.045f);
         paint.setColor(ringColor);
         canvas.drawCircle(cx, cy, radius, paint);
 
         for (int i = 0; i < 12; i++) {
             double angle = Math.toRadians(i * 30.0 - 90.0);
-            float inner = radius - (i % 3 == 0 ? dp(6f) : dp(3f));
-            paint.setStrokeWidth(i % 3 == 0 ? dp(1.6f) : dp(1f));
+            float inner = radius - (i % 3 == 0 ? radius * 0.22f : radius * 0.11f);
+            paint.setStrokeWidth(radius * (i % 3 == 0 ? 0.055f : 0.035f));
             canvas.drawLine(
                     cx + (float) Math.cos(angle) * inner,
                     cy + (float) Math.sin(angle) * inner,
-                    cx + (float) Math.cos(angle) * (radius - dp(1f)),
-                    cy + (float) Math.sin(angle) * (radius - dp(1f)),
+                    cx + (float) Math.cos(angle) * (radius - radius * 0.03f),
+                    cy + (float) Math.sin(angle) * (radius - radius * 0.03f),
                     paint);
         }
 
@@ -102,25 +103,25 @@ public class ClockView extends View {
         paint.setStrokeCap(Paint.Cap.ROUND);
 
         float hourAngle = (hour + minute / 60f) * 30f - 90f;
-        paint.setStrokeWidth(dp(2.8f));
+        paint.setStrokeWidth(radius * 0.105f);
         paint.setColor(handColor);
         drawHand(canvas, cx, cy, hourAngle, radius * 0.50f);
 
         float minuteAngle = (minute + second / 60f) * 6f - 90f;
-        paint.setStrokeWidth(dp(1.9f));
+        paint.setStrokeWidth(radius * 0.070f);
         paint.setColor(handColor);
         drawHand(canvas, cx, cy, minuteAngle, radius * 0.72f);
 
         if (showSeconds) {
             float secondAngle = second * 6f - 90f;
-            paint.setStrokeWidth(dp(1f));
+            paint.setStrokeWidth(radius * 0.038f);
             paint.setColor(accentColor);
             drawHand(canvas, cx, cy, secondAngle, radius * 0.80f);
         }
 
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(accentColor);
-        canvas.drawCircle(cx, cy, dp(2.4f), paint);
+        canvas.drawCircle(cx, cy, radius * 0.09f, paint);
     }
 
     private void drawHand(Canvas canvas, float cx, float cy, float degrees, float length) {

@@ -1,4 +1,4 @@
-# NSP Launcher 1.0
+# NSP Launcher 1.1
 
 **NSP = NVIDIA Shield Portable.**
 
@@ -9,81 +9,59 @@ Windows Phone. Java puro, sin Gradle y sin dependencias externas.
 ![minSdk](https://img.shields.io/badge/minSdk-22-blue)
 ![Java](https://img.shields.io/badge/Java-8-orange)
 
-## Características
+## Qué hay ahora
 
-- **Rejilla de 5 columnas** con scroll vertical; las apps se reparten en filas y el resto baja.
-- **Contadores de notificaciones** en cada mosaico (burbuja roja con el número).
-- **Imagen de fondo personalizada** desde la galería, solo para el launcher, con ajuste
-  automático de tema y velo según el brillo de la foto.
-- **Panel de sistema** superior con Ajustes, fecha, reloj analógico, clima de Ciudad de
-  Guatemala y memoria (RAM, interna y microSD).
-- **RECIENTES**: los últimos 8 lanzamientos, actualizados al volver de una app.
-- **Favoritos** y **categorías** (Juegos, Emuladores, Multimedia, Internet, Herramientas, Otros).
-- Fondos incluidos para tema oscuro y claro, y opción de no usar fondo.
-- Navegación completa con **cruceta, stick y botones**; también táctil.
-- Foco visible con borde y escala; navegación 2D por filas y columnas.
-- Tema oscuro/claro persistente.
-- **Arranque con caché**: metadatos en disco + iconos en caché, pintado inmediato y escaneo
-  en segundo plano.
-- **Carga progresiva de iconos** y actualizaciones incrementales de favoritos/categorías.
-- Recarga automática al instalar/desinstalar apps.
+- **Rejilla de 5 columnas** con foco 2D: izquierda/derecha dentro de la fila, arriba/abajo
+  entre filas y secciones. Nada queda escondido a la derecha.
+- **Panel de sistema**: `Ajustes | Avisos | Fecha | Batería | Clima | Memoria`.
+- **Cabecera**: título NSP + **reloj analógico pequeño** + **fecha larga y hora en 24 h**.
+- **Pista de controles**: aparece al arrancar, se desvanece a los ~6 s y vuelve a salir si
+  pulsas una tecla sin asignar (volumen, NVIDIA, medios…).
+- **Anillo de batería** en el panel: nivel como arco de 270 %, porcentaje en el centro, color
+  por nivel (verde/ámbar/rojo) y tiempo restante estimado cuando la consola lo permite.
+- **Mosaico de Avisos**: contador de notificaciones del sistema, lista por app, **Y** descarta
+  los avisos de esa app y **X** los descarta todos, sin abrir las apps.
+- **Menú por app** (long press): abrir, añadir/quitar de Favoritos, mover de categoría, info de
+  la app y desinstalar.
+- **Imagen de fondo desde la galería**, solo del launcher, con recorte, EXIF y tema/velo
+  automáticos.
+- **Favoritos, RECIENTES y categorías** con actualizaciones en sitio (sin reconstruir todo).
+- **Arranque con caché**: metadatos e iconos en disco, pintado inmediato y escaneo en segundo
+  plano. Iconos progresivos.
 - **Interruptor para usar NSP como launcher**, apagado de fábrica. No borra el launcher original.
-
-## Imagen de fondo desde la galería
-
-En **Ajustes → APARIENCIA**:
-
-- **Fondo**: Activado / Desactivado.
-- **Imagen de fondo**: abre la galería del sistema. Al elegir una foto:
-  - se copia al almacenamiento privado de NSP (no depende del archivo original);
-  - se corrige la orientación EXIF;
-  - se recorta al centro a 1280×720;
-  - en modo **Automático**, se mide su brillo y se cambia el tema y el velo: foto oscura →
-    tema oscuro; foto clara → tema claro.
-- **Estilo del fondo**: Automático / Oscuro / Claro. Oscuro y Claro fuerzan ese tema y su velo.
-- **Quitar imagen**: vuelve al fondo incluido o a ninguno.
-
-La imagen **solo** se usa como fondo del launcher. No cambia el wallpaper del sistema, ni la
-pantalla de bloqueo, ni la pantalla de Ajustes. Se guarda en la carpeta privada de la app y
-se borra al desinstalar. No se sube a ningún sitio. No requiere permiso de almacenamiento:
-se lee el URI que devuelve el selector y se copia al instante.
-
-En la SHIELD, el selector del sistema se maneja con la pantalla táctil; la cruceta no siempre
-mueve la selección dentro de la galería.
-
-## Contadores de notificaciones
-
-- Solo cuentan; **no** leen el texto ni guardan contenido.
-- Requieren activar una vez **Acceso a notificaciones** en Ajustes del sistema
-  (NSP → Ajustes → Notificaciones → Acceso a notificaciones).
-- La burbuja aparece en todos los mosaicos de la app (RECIENTES, Favoritos y su categoría).
-- Limitación de Android 5.1: `getActiveNotifications()` es API 23. Solo se cuentan las
-  notificaciones recibidas mientras el servicio está conectado. Tras reiniciar, el contador
-  empieza de cero hasta que llegue una nueva.
-- Las notificaciones de la pantalla bloqueada siguen siendo de SystemUI.
-
-## Nombres
-
-- **Panel**: la franja de información superior.
-- **Tarjeta**: cada módulo del panel (fecha, reloj, clima, memoria).
-- **Mosaico**: cada app o acceso (incluye Ajustes).
-- **Sección**: RECIENTES, Favoritos, Juegos, etc.
 
 ## Controles
 
 | Botón | Acción |
 |---|---|
 | A / Enter | Abrir app o activar la fila enfocada |
-| B | Volver en Ajustes; salir del launcher si no es el inicio |
+| B | Volver en Ajustes o cerrar un diálogo; salir del launcher si no es el inicio |
 | X | Añadir / quitar Favorito |
-| Y | Mover la app a otra categoría |
-| Cruceta / stick | Navegar por la rejilla (izquierda/derecha y arriba/abajo) |
+| Y | Mover la app a otra categoría; en Avisos, descartar los de esa app |
+| Long press | Menú de la app |
+| Cruceta / stick | Navegar por la rejilla |
 | L1 / R1 | Sección anterior / siguiente |
 | SELECT | Cambiar tema oscuro / claro |
 | START | Recargar la lista de aplicaciones |
 
-En Ajustes: cruceta para elegir, A para activar, B para volver.
-En el diálogo de categoría: A confirma, B cancela.
+## Ajustes
+
+**Apariencia** queda en dos filas, sin duplicados:
+
+- **Tema**: Oscuro / Claro. Con una imagen de fondo, el tema elegido manda también sobre el velo.
+- **Fondo de pantalla**: abre un diálogo con *Incluido (tema actual)*, *Imagen de la galería*,
+  *Sin fondo* y, si hay una propia, *Quitar imagen*.
+
+Reglas:
+
+- El tema automático por brillo de la foto solo actúa **si el fondo se está viendo**.
+- Si fijas el tema a mano con una imagen puesta, se respeta aunque la foto sea más clara u oscura.
+- El fondo **solo** afecta al launcher: ni el lockscreen ni el wallpaper del sistema.
+
+**Notificaciones**: *Acceso a notificaciones* abre los ajustes del sistema. Al activarlo, cada
+mosaico muestra un contador y el mosaico **Avisos** permite ver y descartar los avisos.
+
+**Sistema**: *Usar NSP como inicio*, *Ajustes de Inicio del sistema*, *Recargar aplicaciones*.
 
 ## Clima y privacidad
 
@@ -93,9 +71,17 @@ En el diálogo de categoría: A confirma, B cancela.
   desde **Ajustes → Actualizar clima**.
 - Caché local; sin red se sigue mostrando el último dato.
 - Permisos: `INTERNET` y el permiso de binding del servicio de notificaciones
-  (`BIND_NOTIFICATION_LISTENER_SERVICE`, exigido por el sistema para escuchar notificaciones).
+  (`BIND_NOTIFICATION_LISTENER_SERVICE`, que el sistema exige para escuchar notificaciones).
 - Sin analítica, sin telemetría y sin servicios de Google.
-- El tráfico de clima va por HTTP (sin cifrar); es un dato público y no se envía nada del dispositivo.
+- El clima va por HTTP (sin cifrar): es un dato público y no se envía nada del dispositivo.
+
+### Contadores de notificaciones: límite de Android 5.1
+
+`getActiveNotifications()` es API 23. En 5.1 el servicio solo ve lo que llega **mientras está
+conectado**, así que al arrancar la consola los contadores empiezan en 0 hasta que llegue el
+primer aviso. En el uso diario el servicio queda vivo en cuanto se concede el acceso, y por eso
+el contador es fiable. Los avisos que ya estaban en la persiana antes de conceder el acceso no
+se pueden recuperar.
 
 ## Usar NSP como launcher
 
@@ -105,8 +91,8 @@ sigue decidiendo.
 1. Abrir **Ajustes** (mosaico de engranaje).
 2. En **Sistema**, pulsar **Usar NSP como inicio** y confirmar **Activar**.
 3. Pulsar **Home**, elegir **NSP** y luego **Siempre**.
-4. Para volver: desactivar el interruptor, usar **Ajustes de Inicio del sistema** o desinstalar NSP.
-5. El launcher de NVIDIA sigue instalado; si NSP falla, Android vuelve a él.
+4. Para volver: desactivar el interruptor, usar **Ajustes de Inicio del sistema** o desinstalar
+   NSP. El launcher de NVIDIA sigue instalado; si NSP falla, Android vuelve a él.
 
 Cuando NSP es el inicio, **B y BACK no cierran la app**.
 
@@ -133,7 +119,7 @@ cd NSP
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-Salida: `dist\NSPLauncher-1.0.apk` y `dist\NSPLauncher.apk` (versionCode 5).
+Salida: `dist\NSPLauncher-1.1.apk` y `dist\NSPLauncher.apk` (versionCode 6).
 
 El script autodetecta el SDK y el JDK 8; también acepta:
 
@@ -147,8 +133,7 @@ Para publicar actualizaciones crea una clave de release y pásala con `-Keystore
 `-KeyAlias`, `-StorePass` y `-KeyPass`.
 
 Más detalle en [docs/BUILD.md](docs/BUILD.md). La numeración se explica en
-[docs/VERSIONING.md](docs/VERSIONING.md) y los pendientes en
-[docs/ROADMAP.md](docs/ROADMAP.md).
+[docs/VERSIONING.md](docs/VERSIONING.md) y los pendientes en [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Instalar por USB
 
@@ -159,7 +144,7 @@ Más detalle en [docs/BUILD.md](docs/BUILD.md). La numeración se explica en
 o:
 
 ```powershell
-adb install -r .\dist\NSPLauncher-1.0.apk
+adb install -r .\dist\NSPLauncher-1.1.apk
 adb shell am start -n com.nsp.launcher/.MainActivity
 ```
 
@@ -169,10 +154,11 @@ adb shell am start -n com.nsp.launcher/.MainActivity
 app/src/main/
   AndroidManifest.xml
   java/com/nsp/launcher/
-    MainActivity.java       inicio, foco 2D, rejilla, controles, fondo
-    BackgroundManager.java  selector, recorte, EXIF, brillo y preferencias
-    Dashboard.java          tarjetas de fecha, reloj, clima y memoria
-    ClockView.java          reloj analógico
+    MainActivity.java       inicio, foco 2D, rejilla, cabecera, menús
+    BackgroundManager.java  imagen de la galería, recorte, EXIF, brillo y modos
+    BatteryRingView.java    medidor circular de batería
+    ClockView.java          reloj analógico (grande y pequeño)
+    Dashboard.java          tarjetas de fecha, batería, clima y memoria
     WeatherIconView.java    iconos de clima dibujados
     WeatherService.java     Open-Meteo + caché
     WeatherData.java
@@ -182,42 +168,39 @@ app/src/main/
     AppEntry.java
     IconStore.java          caché de iconos en memoria y disco
     NotificationService.java listener de notificaciones (solo conteo)
-    NotificationStore.java   contadores por paquete + notificación a la UI
+    NotificationStore.java   contadores por paquete y descarte
   res/drawable-nodpi/        fondos incluidos
   res/                       temas, textos, iconos
 build.ps1                   compilación sin Gradle
 install.ps1                 instalación por adb
-docs/                       compilación, arquitectura, versionado y hoja de ruta
+docs/                       compilación, arquitectura, versionado y pendientes
 ```
 
 Arquitectura y flujos en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-Los pendientes y siguientes mejoras están en [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Verificado
 
 - Emulador **Android 5.1.1 / API 22, 1280×720 @ 320 dpi** (misma resolución y densidad que la
-  SHIELD Portable): panel, clima, memoria, rejilla de 5 columnas, foco 2D, RECIENTES,
-  favoritos, cambio de categoría en sitio, tema claro/oscuro, fondos incluidos y contadores.
-- Selector de galería del sistema: imagen personalizada, recorte, persistencia, tema automático
-  (foto clara → claro; foto oscura → oscuro), cambio manual de estilo y eliminación.
-- Flujo completo de Inicio: activar → elegir NSP → Siempre; B/BACK no cierran; desactivar → vuelve NVIDIA.
-- Sin crashes ni ANR en las pruebas.
-- Pendiente: prueba prolongada en hardware real, fotos con EXIF de cámaras reales y varias tarjetas SD.
+  SHIELD Portable): rejilla de 5 columnas, foco 2D, anillo de batería, reloj de la cabecera,
+  pista de controles que se desvanece, mosaico de avisos con lista y descarte, menú por app,
+  ajustes de fondo unificados, clima, memoria, favoritos, recientes y uso como Inicio.
+- Flujo completo de Inicio: activar → elegir NSP → Siempre; B/BACK no cierran; desactivar → vuelve
+  NVIDIA.
+- Instalación limpia, arranque en frío y con caché, sin crashes ni ANR.
+- Pendiente: prueba prolongada en hardware real, fotos de cámara con EXIF y varias tarjetas SD.
 
 ## Limitaciones
 
-- El selector de galería necesita una app de galería/archivos que responda a `ACTION_GET_CONTENT`;
-  en la SHIELD se usa la pantalla táctil.
-- No hay editor de recorte: la foto se recorta al centro.
-- Los contadores de notificaciones no recuperan la persiana completa en API 22.
+- Los contadores de notificaciones no recuperan la persiana completa en API 22 (ver arriba).
 - El clima es HTTP y la ciudad está fija; sin ubicación automática.
+- Solo hay fondos incluidos; la foto propia es una copia local de la galería.
 - Sin widgets de Google ni de terceros.
 - Sin live tiles animados ni mosaicos de varios tamaños.
 - Orden alfabético dentro de cada categoría.
 
 ## Publicar en GitHub
 
-- `build/`, `dist/`, `keystore/`, `*.apk` y `*.idsig` están en `.gitignore`.
+- `build/`, `dist/`, `backups/`, `keystore/`, `*.apk` y `*.idsig` están en `.gitignore`.
 - Sube el APK como **Release**, no al repositorio.
 - No subas tu keystore de release ni contraseñas.
 - El APK de `dist` está firmado con la clave de depuración; sirve para probar, pero no para
