@@ -147,7 +147,7 @@ Para publicar actualizaciones crea una clave de release y pásala con `-Keystore
 `-KeyAlias`, `-StorePass` y `-KeyPass`.
 
 Más detalle en [docs/BUILD.md](docs/BUILD.md). La numeración se explica en
-[docs/VERSIONING.md](docs/VERSIONING.md) y las siguientes mejoras en
+[docs/VERSIONING.md](docs/VERSIONING.md) y los pendientes en
 [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Instalar por USB
@@ -191,7 +191,7 @@ docs/                       compilación, arquitectura, versionado y hoja de rut
 ```
 
 Arquitectura y flujos en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-Las siguientes mejoras están en [docs/ROADMAP.md](docs/ROADMAP.md).
+Los pendientes y siguientes mejoras están en [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Verificado
 
