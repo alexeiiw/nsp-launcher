@@ -192,11 +192,3 @@ para el refresco.
 3. No añade retardos perceptibles al arranque (dato por broadcast, no por sondeo).
 4. Es legible en tema claro y en tema oscuro.
 5. Si el tiempo restante no es fiable, no se muestra.
-
----
-
-## 5. Detalles del panel
-
-- Reloj configurable de 12 o 24 h.
-- Fecha con formato corto ("mié 21") o formato largo ("miércoles 21 de octubre").
-- Opción de ocultar el panel si se prefiere solo la rejilla de apps.
