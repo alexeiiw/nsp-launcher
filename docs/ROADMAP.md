@@ -55,7 +55,6 @@ La 1.3 abrió la puerta al HTTPS moderno; un auto-updater realista en Android 5.
 
 No están planificadas ni comprometidas; se anotan por si en algún momento hay ganas:
 
-- Tipo de cambio Q/USD junto al BTC (`Banguat`, SOAP `TipoCambio.asmx`, verificado en línea 26/10/2026: respuesta real `referencia 7.63622`).
 - Filas de "más jugados" y de accesos rápidos dentro de la fila SISTEMA.
 - Tamaño de mosaico configurable (4, 5 o 6 columnas) y mosaicos 2×2.
 - Tarjeta de red (Wi-Fi, SSID y señal).
