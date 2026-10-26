@@ -46,9 +46,9 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1
 
 Salida:
 
-- `dist\NSPLauncher-1.2.apk`
+- `dist\NSPLauncher-1.3.apk`
 - `dist\NSPLauncher.apk` (copia con nombre fijo)
-- `dist\NSPLauncher-1.2.apk.idsig` (firma v2)
+- `dist\NSPLauncher-1.3.apk.idsig` (firma v2)
 
 ### Parámetros
 
@@ -56,8 +56,8 @@ Salida:
 .\build.ps1 `
   -SdkRoot "C:\Android\Sdk" `
   -JdkPath "C:\Java\jdk8" `
-  -VersionName "1.2" `
-  -VersionCode 7 `
+  -VersionName "1.3" `
+  -VersionCode 9 `
   -KeystorePath "C:\secure\nsp-release.jks" `
   -KeyAlias nsp `
   -StorePass "..." `
@@ -110,7 +110,7 @@ o:
 
 ```powershell
 adb devices
-adb install -r .\dist\NSPLauncher-1.2.apk
+adb install -r .\dist\NSPLauncher-1.3.apk
 adb shell am start -n com.nsp.launcher/.MainActivity
 ```
 
@@ -119,11 +119,11 @@ Por microSD/USB: copia el APK, activa Orígenes desconocidos y ábrelo con un ge
 ## Comprobar el APK
 
 ```powershell
-aapt2 dump badging .\dist\NSPLauncher-1.2.apk
-apksigner verify --print-certs .\dist\NSPLauncher-1.2.apk
+aapt2 dump badging .\dist\NSPLauncher-1.3.apk
+apksigner verify --print-certs .\dist\NSPLauncher-1.3.apk
 ```
 
-Debe mostrar `sdkVersion:'22'`, `targetSdkVersion:'28'` y `versionName='1.2'`.
+Debe mostrar `sdkVersion:'22'`, `targetSdkVersion:'28'` y `versionName='1.3'`.
 
 ## Problemas comunes
 

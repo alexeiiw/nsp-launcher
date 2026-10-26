@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">NSP</string>
+    <string name="power_service_desc">Abre el menú de apagado del sistema. No lee el contenido de la pantalla.</string>
 </resources>

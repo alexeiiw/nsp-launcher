@@ -80,6 +80,19 @@ public class MainActivity extends Activity {
     private Dashboard dashboard;
     private WeatherData weather;
     private boolean resumed = false;
+
+    private LinearLayout btcChip;
+    private TextView btcValue;
+    private TextView btcStatus;
+    private ImageView settingsGear;
+    private boolean btcLoading;
+    private String btcError;
+    private final ArrayList<View> headerItems = new ArrayList<View>();
+    private boolean headerFocus;
+    private int headerPos;
+    private Tile agendaTile;
+    private TextView agendaLine1;
+    private TextView agendaLine2;
     private boolean weatherLoading = false;
     private boolean recentsDirty = false;
     private BroadcastReceiver packageReceiver;
@@ -326,6 +339,10 @@ public class MainActivity extends Activity {
         headerRight.setOrientation(LinearLayout.HORIZONTAL);
         headerRight.setGravity(Gravity.CENTER_VERTICAL);
 
+        headerItems.clear();
+        headerFocus = false;
+        buildBtcChip(headerRight);
+
         if (clockStyle == 2) {
             LinearLayout dateBlock = new LinearLayout(this);
             dateBlock.setOrientation(LinearLayout.VERTICAL);
@@ -388,6 +405,8 @@ public class MainActivity extends Activity {
                 headerRight.addView(headerClock, clockLp);
             }
         }
+
+        buildSettingsGear(headerRight);
 
         header.addView(headerRight, new LinearLayout.LayoutParams(-2, -2));
 
@@ -495,16 +514,18 @@ public class MainActivity extends Activity {
         Section section = new Section();
         section.title = "Sistema";
 
-        Tile tile = makeSystemTile("Ajustes", R.mipmap.ic_settings, 0xFF647687,
+        Tile agenda = makeAgendaTile(
                 new Runnable() {
                     public void run() {
-                        openSettings();
+                        openCalendarApp();
                     }
                 });
-        LinearLayout.LayoutParams tileParams = new LinearLayout.LayoutParams(dp(96), dp(96));
-        tileParams.rightMargin = dp(6);
-        row.addView(tile.view, tileParams);
-        section.tiles.add(tile);
+        LinearLayout.LayoutParams agendaParams = new LinearLayout.LayoutParams(dp(96), dp(96));
+        agendaParams.rightMargin = dp(6);
+        row.addView(agenda.view, agendaParams);
+        section.tiles.add(agenda);
+        agendaTile = agenda;
+        refreshAgenda();
 
         notificationTile = makeSystemTile("Avisos", R.mipmap.ic_notifications, 0xFF825A2C,
                 new Runnable() {
@@ -1002,6 +1023,276 @@ public class MainActivity extends Activity {
         return t;
     }
 
+    private Tile makeAgendaTile(final Runnable action) {
+        final Tile t = new Tile();
+        t.action = action;
+
+        t.normal = new GradientDrawable();
+        t.normal.setShape(GradientDrawable.RECTANGLE);
+        t.normal.setColor(0xFFFA6800);
+
+        t.focused = new GradientDrawable();
+        t.focused.setShape(GradientDrawable.RECTANGLE);
+        t.focused.setColor(0xFFFA6800);
+        t.focused.setStroke(dp(3), isLight ? 0xFF111111 : C_WHITE);
+
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackgroundDrawable(t.normal);
+        card.setClickable(true);
+        card.setPadding(dp(9), dp(8), dp(9), dp(8));
+
+        TextView title = new TextView(this);
+        title.setText("AGENDA");
+        title.setTextSize(7);
+        title.setTextColor(0xCCFFFFFF);
+        title.setLetterSpacing(0.15f);
+        title.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        card.addView(title, new LinearLayout.LayoutParams(-2, -2));
+
+        agendaLine1 = new TextView(this);
+        agendaLine1.setTextSize(8);
+        agendaLine1.setTextColor(C_WHITE);
+        agendaLine1.setSingleLine(true);
+        agendaLine1.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams line1Params = new LinearLayout.LayoutParams(-1, -2);
+        line1Params.topMargin = dp(6);
+        card.addView(agendaLine1, line1Params);
+
+        agendaLine2 = new TextView(this);
+        agendaLine2.setTextSize(8);
+        agendaLine2.setTextColor(0xCCFFFFFF);
+        agendaLine2.setSingleLine(true);
+        agendaLine2.setEllipsize(TextUtils.TruncateAt.END);
+        card.addView(agendaLine2, new LinearLayout.LayoutParams(-1, -2));
+
+        t.view = card;
+
+        card.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (t.action != null) t.action.run();
+            }
+        });
+
+        card.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (hasFocus) {
+                    v.setBackgroundDrawable(t.focused);
+                    v.animate().scaleX(1.05f).scaleY(1.05f).setDuration(90).start();
+                } else {
+                    v.setBackgroundDrawable(t.normal);
+                    v.animate().scaleX(1f).scaleY(1f).setDuration(90).start();
+                }
+            }
+        });
+
+        return t;
+    }
+
+    private void buildBtcChip(LinearLayout headerRight) {
+        btcChip = new LinearLayout(this);
+        btcChip.setOrientation(LinearLayout.VERTICAL);
+        btcChip.setGravity(Gravity.CENTER);
+        btcChip.setClickable(true);
+        btcChip.setPadding(dp(6), dp(2), dp(6), dp(2));
+
+        btcValue = new TextView(this);
+        btcValue.setTextSize(13);
+        btcValue.setTextColor(textColor());
+        btcValue.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+        btcValue.setSingleLine(true);
+        btcChip.addView(btcValue, new LinearLayout.LayoutParams(-2, -2));
+
+        btcStatus = new TextView(this);
+        btcStatus.setTextSize(7);
+        btcStatus.setTextColor(secondaryColor());
+        btcStatus.setSingleLine(true);
+        LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(-2, -2);
+        statusParams.topMargin = dp(1);
+        btcChip.addView(btcStatus, statusParams);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-2, -2);
+        params.rightMargin = dp(12);
+        headerRight.addView(btcChip, params);
+        headerItems.add(btcChip);
+
+        btcChip.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                fetchBtc(true);
+            }
+        });
+        updateBtcViews();
+    }
+
+    private void buildSettingsGear(LinearLayout headerRight) {
+        settingsGear = new ImageView(this);
+        settingsGear.setImageResource(R.mipmap.ic_settings);
+        settingsGear.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        settingsGear.setClickable(true);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(26), dp(26));
+        params.leftMargin = dp(10);
+        headerRight.addView(settingsGear, params);
+        headerItems.add(settingsGear);
+
+        settingsGear.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                openSettings();
+            }
+        });
+    }
+
+    private void enterHeader() {
+        headerFocus = true;
+        headerPos = headerItems.size() - 1;
+        View current = getCurrentFocus();
+        if (current != null && current != btcChip && current != settingsGear) {
+            current.clearFocus();
+        }
+        updateHeaderSelection();
+        updateBtcViews();
+    }
+
+    private void exitHeader() {
+        headerFocus = false;
+        updateHeaderSelection();
+        focusTile(0, focusIndex);
+    }
+
+    private void moveHeader(int direction) {
+        int next = headerPos + direction;
+        if (next < 0 || next >= headerItems.size()) return;
+        headerPos = next;
+        updateHeaderSelection();
+    }
+
+    private void openHeaderItem() {
+        if (headerPos < 0 || headerPos >= headerItems.size()) return;
+        View v = headerItems.get(headerPos);
+        if (v == btcChip) {
+            fetchBtc(true);
+        } else if (v == settingsGear) {
+            headerFocus = false;
+            updateHeaderSelection();
+            openSettings();
+        }
+    }
+
+    private void updateHeaderSelection() {
+        if (headerItems.isEmpty()) return;
+        for (int i = 0; i < headerItems.size(); i++) {
+            View v = headerItems.get(i);
+            boolean selected = headerFocus && i == headerPos;
+            v.animate().scaleX(selected ? 1.12f : 1f)
+                    .scaleY(selected ? 1.12f : 1f)
+                    .setDuration(90).start();
+        }
+    }
+
+    private void updateBtcViews() {
+        if (btcValue == null) return;
+        if (btcLoading) {
+            btcValue.setText("BTC …");
+            btcStatus.setText("Consultando");
+            return;
+        }
+        BtcData cached = BtcService.loadCached(this);
+        if (cached != null) {
+            btcValue.setText("BTC " + BtcService.format(cached.usd));
+            btcStatus.setText(btcAge(cached.updated));
+        } else {
+            btcValue.setText("BTC —");
+            btcStatus.setText("Sin conexión");
+        }
+    }
+
+    private String btcAge(long updated) {
+        long delta = System.currentTimeMillis() - updated;
+        if (delta < 60L * 1000L) return "ahora";
+        long minutes = delta / (60L * 1000L);
+        if (minutes < 60L) return "hace " + minutes + " min";
+        long hours = minutes / 60L;
+        long rest = minutes % 60L;
+        if (rest > 0) return "hace " + hours + " h " + rest + " m";
+        return "hace " + hours + " h";
+    }
+
+    private void maybeRefreshBtc() {
+        if (!resumed || btcLoading) return;
+        if (!BtcService.isStale(BtcService.loadCached(this))) {
+            updateBtcViews();
+            return;
+        }
+        fetchBtc(false);
+    }
+
+    private void fetchBtc(final boolean force) {
+        if (btcLoading) return;
+        if (!force && !BtcService.isStale(BtcService.loadCached(this))) return;
+        btcLoading = true;
+        updateBtcViews();
+        BtcService.fetch(this, new BtcService.Callback() {
+            public void onResult(BtcData data, String error) {
+                btcLoading = false;
+                if (data != null) updateBtcViews();
+                else {
+                    btcError = error;
+                    updateBtcViews();
+                }
+            }
+        });
+    }
+
+    private void refreshAgenda() {
+        if (agendaLine1 == null) return;
+        ArrayList<AgendaService.Event> events = AgendaService.next(this, 2);
+        if (events.isEmpty()) {
+            agendaLine1.setText("Sin actividades");
+            agendaLine2.setText("");
+            return;
+        }
+        agendaLine1.setText(eventLine(events.get(0)));
+        agendaLine2.setText(events.size() > 1 ? eventLine(events.get(1)) : "");
+    }
+
+    private String eventLine(AgendaService.Event event) {
+        Calendar begin = Calendar.getInstance();
+        begin.setTimeInMillis(event.begin);
+        Calendar now = Calendar.getInstance();
+        boolean sameDay = begin.get(Calendar.YEAR) == now.get(Calendar.YEAR)
+                && begin.get(Calendar.DAY_OF_YEAR) == now.get(Calendar.DAY_OF_YEAR);
+        String day = "";
+        if (!sameDay) {
+            day = new SimpleDateFormat("EEE ", new Locale("es", "ES"))
+                    .format(new Date(event.begin));
+            day = day.substring(0, 1).toUpperCase(new Locale("es", "ES"))
+                    + day.substring(1);
+        }
+        if (event.allDay) {
+            return day.isEmpty() ? event.title : day.trim() + " · " + event.title;
+        }
+        String time = new SimpleDateFormat("HH:mm", new Locale("es", "ES"))
+                .format(new Date(event.begin));
+        return day + time + " " + event.title;
+    }
+
+    private void openCalendarApp() {
+        Intent calendar = new Intent(Intent.ACTION_MAIN);
+        calendar.setPackage("com.android.calendar");
+        calendar.addCategory(Intent.CATEGORY_LAUNCHER);
+        try {
+            startActivity(calendar);
+            return;
+        } catch (Exception ignored) {
+        }
+        try {
+            startActivity(getPackageManager()
+                    .getLaunchIntentForPackage("com.android.calendar"));
+            return;
+        } catch (Exception ignored) {
+        }
+        toast("No hay app de calendario");
+    }
+
     private void focusTile(int sectionIndex, int index) {
         if (sectionIndex < 0 || sectionIndex >= sections.size()) return;
         Section s = sections.get(sectionIndex);
@@ -1259,16 +1550,24 @@ public class MainActivity extends Activity {
         if (action == KeyEvent.ACTION_DOWN) {
             switch (code) {
                 case KeyEvent.KEYCODE_DPAD_LEFT:
-                    moveHorizontal(-1);
+                    if (headerFocus) moveHeader(-1);
+                    else moveHorizontal(-1);
                     return true;
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
-                    moveHorizontal(1);
+                    if (headerFocus) moveHeader(1);
+                    else moveHorizontal(1);
                     return true;
                 case KeyEvent.KEYCODE_DPAD_UP:
+                    if (headerFocus) return true;
+                    if (focusSection == 0 && !headerItems.isEmpty()) {
+                        enterHeader();
+                        return true;
+                    }
                     moveVertical(-1);
                     return true;
                 case KeyEvent.KEYCODE_DPAD_DOWN:
-                    moveVertical(1);
+                    if (headerFocus) exitHeader();
+                    else moveVertical(1);
                     return true;
                 case KeyEvent.KEYCODE_BUTTON_L1:
                     moveSection(-1);
@@ -1280,7 +1579,10 @@ public class MainActivity extends Activity {
                 case KeyEvent.KEYCODE_DPAD_CENTER:
                 case KeyEvent.KEYCODE_ENTER:
                 case KeyEvent.KEYCODE_NUMPAD_ENTER:
-                    if (event.getRepeatCount() == 0) openFocused();
+                    if (event.getRepeatCount() == 0) {
+                        if (headerFocus) openHeaderItem();
+                        else openFocused();
+                    }
                     return true;
                 case KeyEvent.KEYCODE_BUTTON_X:
                     if (event.getRepeatCount() == 0) toggleFavoriteFocused();
@@ -1300,7 +1602,8 @@ public class MainActivity extends Activity {
                     return true;
                 case KeyEvent.KEYCODE_BUTTON_B:
                     if (event.getRepeatCount() == 0) {
-                        if (!HomeUtil.isDefaultHome(this)) finish();
+                        if (headerFocus) exitHeader();
+                        else if (!HomeUtil.isDefaultHome(this)) finish();
                     }
                     return true;
                 default:
@@ -1791,6 +2094,8 @@ public class MainActivity extends Activity {
         }
         updateHeaderClock();
         updateNotificationBadge();
+        refreshAgenda();
+        maybeRefreshBtc();
         ui.removeCallbacks(headerTicker);
         ui.postDelayed(headerTicker, 1000);
 

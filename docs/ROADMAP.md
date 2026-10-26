@@ -7,11 +7,14 @@ Tegra 4, 2 GB de RAM, mando integrado (cruceta, sticks analógicos, A/B/X/Y, L1/
 SELECT) y pantalla táctil. Todo lo de esta lista está pensado para esa pantalla, ese mando y
 ese uso: jugar, escribir rápido y no tocar el launcher más de lo necesario.
 
-Estado actual: **1.2** es la base funcional y cerró los cuatro puntos que estaban abiertos
-(mosaico de Avisos, fondo y tema unificados, menú por app y anillo de batería), más el reloj
-conmutable y el panel de 5 tarjetas.
+Estado actual: **1.3** es la base funcional (la 1.2 cerró el mosaico de Avisos, fondo y tema
+unificados, menú por app y anillo de batería; la 1.3 añadió el chip BTC, la tarjeta de
+Agenda, el gear de Ajustes en la cabecera y el Apagar consola).
 
 **No hay pendientes abiertos.**
+Lo que quedó "pendiente de hardware": probar en la consola real el Apagar consola (activación
+del servicio de accesibilidad), el chip BTC con red real y la tarjeta Agenda con el
+calendario del usuario.
 
 ## Ideas para cuando se quieran retomar
 

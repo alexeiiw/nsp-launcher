@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.3
+
+- **Ajustes suben a la cabecera**: icono ⚙ en la esquina, alcanzable con ARRIBA desde la
+  fila SISTEMA (y B para volver a los mosaicos). En la fila queda espacio para una tarjeta
+  nueva sin robar altura a la rejilla.
+- **Chip BTC en la cabecera**: `BTC $68,214` con la edad de la cotización. Fuente:
+  CoinGecko por HTTPS. Si el almacén de certificados del sistema (de 2015) no conoce
+  Let's Encrypt, reintenta con las **raíces ISRG X1/X2 empaquetadas** en el APK — funciona
+  también en Android 5.1 sin tocar el sistema. Se actualiza al abrir y al hacer clic.
+- **Tarjeta AGENDA** en la fila del panel, en naranja Metro: las 2 próximas actividades
+  del calendario del sistema (hora + título, "Todo el día"), toca para abrir la app de
+  calendario. Sin eventos muestra "Sin actividades". Permiso `READ_CALENDAR`.
+- **Apagar consola** en Ajustes → SISTEMA: abre el diálogo del sistema (Apagar/Reiniciar)
+  vía un servicio de accesibilidad mínimo (`NSP · Menú de energía`), que hay que activar
+  una vez en Ajustes → Accesibilidad. Sin root.
+- Versión 1.3 (versionCode 9).
+
 ## 1.2
 
 - **Un solo reloj en la cabecera**, elegible en Ajustes: **Analógico / Digital / Oculto**.

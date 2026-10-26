@@ -12,11 +12,14 @@ MainActivity
 ├── IconStore          iconos en memoria (LruCache) y disco (PNG)
 ├── BackgroundManager   imagen de la galería, recorte, EXIF, brillo y modos
 ├── NotificationStore   contadores por paquete y descarte (hilo principal)
+├── BtcService          precio BTC (CoinGecko HTTPS) + TrustedRoots + caché
+├── AgendaService       próximas actividades del calendario del sistema
 ├── Dashboard          tarjetas del panel
 │   ├── BatteryRingView medidor circular de batería (Canvas)
 │   ├── WeatherIconView iconos de clima (Canvas)
 │   └── Bar            barras de memoria
-├── SettingsActivity   ajustes y alias HOME
+├── SettingsActivity   ajustes, alias HOME y "Apagar consola…"
+├── PowerMenuService   servicio de accesibilidad para el menú de energía
 └── NotificationService listener del sistema (solo conteo)
 ```
 
@@ -56,13 +59,16 @@ Sin caché (primer arranque) se muestra "CARGANDO APLICACIONES" y se hace el esc
 
 ## UI y foco
 
-- `Sistema` contiene los mosaicos **Ajustes** y **Avisos**, y el `Dashboard` con las tarjetas
-  de batería, clima y memoria. La fecha vive en la cabecera.
+- `Sistema` contiene los mosaicos **Agenda** y **Avisos**, y el `Dashboard` con las tarjetas
+  de batería, clima y memoria. **Ajustes subió a la cabecera** (icono ⚙) y la fecha vive ahí.
 - `RECIENTES`, `Favoritos` y categorías son secciones con encabezado y una **rejilla de 5 columnas**.
 - Cada sección guarda su contenedor, rejilla y cabecera para poder insertar/eliminar en sitio.
 - El foco es lógico (`focusSection`, `focusIndex`), no depende del `focusSearch` de Android.
 - Navegación 2D: izquierda/derecha dentro de la fila; arriba/abajo ±5 posiciones y, en los
   bordes, a la sección anterior/siguiente conservando la columna.
+- **Cabecera enfocable**: ARRIBA desde la fila Sistema entra en la cabecera
+  (`headerFocus`); ahí izquierda/derecha cambian entre el chip BTC y el gear de Ajustes,
+  A activa, y ABAJO/B vuelven a los mosaicos reconstruyendo el foco con `focusTile`.
 - `dispatchKeyEvent` mapea cruceta, A, B, X, Y, L1/R1, START y SELECT.
 - `onGenericMotionEvent` lee `AXIS_X/Y` y `AXIS_HAT_X/Y` con zona muerta 0.55 y repetición
   cada 140 ms.
@@ -95,6 +101,29 @@ Sin caché (primer arranque) se muestra "CARGANDO APLICACIONES" y se hace el esc
   raíces modernas (Let's Encrypt/ISRG X1) que Android 5.1 no confía.
 - Actualización en hilo aparte; parseo con `org.json`; errores silenciosos conservando caché.
 
+## BTC
+
+- `BtcService` consulta `api.coingecko.com` (simple/price, `bitcoin.usd`) por **HTTPS**.
+- **Dos intentos**: primero con la pila TLS por defecto del sistema; si el handshake falla
+  (raíz Let's Encrypt/ISRG ausente en el almacén de 2015), reintenta con
+  `TrustedRoots.factory()`, que confía **únicamente** en las raíces ISRG X1/X2 empaquetadas
+  en `res/raw/isrgrootx1.pem` y `isrgrootx2.pem` (`TrustManagerFactory` sobre un `KeyStore`
+  propio, solo para esta conexión). La verificación de nombre de host no cambia.
+- Caché en `SharedPreferences` (`btc_usd`, `btc_updated`), frescura de 1 h.
+- La cabecera muestra `BTC $68,214` + edad del dato; clic refuerza la consulta.
+- Igual que el clima: se consulta en hilo aparte, errores silenciosos; sin datos muestra "BTC —".
+
+## Agenda
+
+- `AgendaService.next()` consulta `CalendarContract.Instances` (ventana: ahora → +30 días).
+- Acepta eventos futuros y los "todo el día" vigentes; ordena por hora de inicio y corta en 2.
+- Errores del proveedor (sin calendario) devuelven lista vacía; la tarjeta muestra
+  "Sin actividades".
+- La tarjeta AGENDA (96 dp, naranja Metro `0xFFFA6800`) es un `Tile` enfocable como los
+  demás; al pulsarla abre la app `com.android.calendar` y refresca en `onResume`.
+- Permiso `READ_CALENDAR`: en API 22 es permiso de instalación (los de ejecución llegan en
+  Android 6), así que basta declararlo en el manifiesto.
+
 ## Notificaciones
 
 - `NotificationService` extiende `NotificationListenerService` y cuenta claves únicas por paquete.
@@ -118,9 +147,11 @@ Sin caché (primer arranque) se muestra "CARGANDO APLICACIONES" y se hace el esc
 
 ## Cabecera y pista de controles
 
-- La cabecera lleva el título `NSP` y, a la derecha, la fecha larga y un reloj cuyo estilo se
-  elige en Ajustes: **analógico** (`ClockView` de 44 dp), **digital** (`HH:mm`, o `HH:mm:ss` con el
-  segundero) u **oculto** (entonces la fecha crece: día grande + día de la semana y mes).
+- La cabecera lleva el título `NSP` y, a la derecha, el **chip BTC** (`BTC $68,214` + edad
+  del dato), la fecha larga, un reloj cuyo estilo se elige en Ajustes (**analógico**
+  (`ClockView` de 44 dp), **digital** (`HH:mm`, o `HH:mm:ss` con el segundero) u **oculto**
+  (entonces la fecha crece: día grande + día de la semana y mes)) y el **gear de Ajustes**
+  (26 dp, abre `SettingsActivity`).
 - Un ticker de 1 s actualiza los textos solo cuando cambian; el reloj analógico se redibuja solo.
 - La pista de controles (`A abrir | X favorito | …`) es una vista flotante sobre la rejilla:
   aparece al construir la UI por primera vez, se atenúa a los 6 s y vuelve a mostrarse cuando
@@ -179,6 +210,17 @@ Sin caché (primer arranque) se muestra "CARGANDO APLICACIONES" y se hace el esc
   *Quitar imagen* (solo si hay una propia).
 - Cambiar el tema con una imagen puesta fija el `bg_theme_override`, de modo que el automático
   no lo pise al arrancar.
+- En SISTEMA hay una fila **Apagar consola…**: si `PowerMenuService` está conectado llama a
+  `performGlobalAction(GLOBAL_ACTION_POWER_DIALOG)` (API 21+), que abre el diálogo nativo con
+  Apagar/Reiniciar y la confirmación del usuario. Si el servicio no está habilitado, muestra
+  instrucciones y un acceso directo a `ACTION_ACCESSIBILITY_SETTINGS`.
+
+### PowerMenuService (accesibilidad)
+
+- Servicio declarado en el manifiesto con `BIND_ACCESSIBILITY_SERVICE` y su configuración en
+  `res/xml/power_service_config.xml` (`canRetrieveWindowContent="false"`).
+- Guarda su instancia estática en `onServiceConnected` y la limpia en `onDestroy`.
+- **No** procesa eventos: su único cometido es abrir el menú de energía cuando se le pide.
 
 ## Launcher (HOME)
 

@@ -186,8 +186,14 @@ public class SettingsActivity extends Activity {
             }
         });
 
+        addRow(content, "Apagar consola…", "", new Runnable() {
+            public void run() {
+                openPowerMenu();
+            }
+        });
+
         TextView footer = new TextView(this);
-        footer.setText("NSP 1.2\nAndroid 5.1 · " + WeatherService.CITY);
+        footer.setText("NSP 1.3\nAndroid 5.1 · " + WeatherService.CITY);
         footer.setTextSize(9);
         footer.setTextColor(isLight ? 0xFF888888 : 0xFF777777);
         footer.setPadding(dp(24), dp(20), dp(24), dp(24));
@@ -339,6 +345,50 @@ public class SettingsActivity extends Activity {
                 }
             }
         });
+    }
+
+    private void openPowerMenu() {
+        if (PowerMenuService.serviceConnected()) {
+            PowerMenuService.openPowerMenu();
+            return;
+        }
+        if (PowerMenuService.isEnabled(this)) {
+            toast("El servicio se está activando; inténtalo de nuevo");
+            return;
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Apagar consola");
+        builder.setMessage("NSP abre el menú de apagado del sistema a través de Acceso. "
+                + "Activa el servicio «NSP · Menú de energía» en Ajustes → Accesibilidad "
+                + "(una sola vez). No lee el contenido de la pantalla.");
+        builder.setPositiveButton("Abrir Acceso", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                try {
+                    startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+                } catch (Exception ex) {
+                    toast("No se pudo abrir Accesibilidad");
+                }
+            }
+        });
+        builder.setNegativeButton("Cancelar", null);
+
+        AlertDialog dialog = builder.create();
+        dialogOpen = true;
+        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            public void onDismiss(DialogInterface d) {
+                dialogOpen = false;
+            }
+        });
+        dialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
+            public boolean onKey(DialogInterface d, int keyCode, KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_BUTTON_B && event.getAction() == KeyEvent.ACTION_DOWN) {
+                    d.dismiss();
+                    return true;
+                }
+                return false;
+            }
+        });
+        dialog.show();
     }
 
     private void showHomeDialog() {

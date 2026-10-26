@@ -5,6 +5,7 @@
     <uses-sdk android:minSdkVersion="22" android:targetSdkVersion="28" />
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
 
     <application
         android:allowBackup="false"
@@ -59,6 +60,18 @@
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
+        </service>
+
+        <service
+            android:name=".PowerMenuService"
+            android:exported="false"
+            android:label="NSP · Menú de energía">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/power_service_config" />
         </service>
     </application>
 </manifest>

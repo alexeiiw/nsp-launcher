@@ -1,4 +1,4 @@
-# NSP Launcher 1.2
+# NSP Launcher 1.3
 
 **NSP = NVIDIA Shield Portable.**
 
@@ -13,9 +13,18 @@ Windows Phone. Java puro, sin Gradle y sin dependencias externas.
 
 - **Rejilla de 5 columnas** con foco 2D: izquierda/derecha dentro de la fila, arriba/abajo
   entre filas y secciones. Nada queda escondido a la derecha.
-- **Panel de sistema**: `Ajustes | Avisos | Batería | Clima | Memoria` (la fecha pasó a la cabecera).
-- **Cabecera**: título NSP + fecha larga + **un solo reloj**, elegible en Ajustes: **Analógico /
-  Digital / Oculto**. Con el reloj oculto, la fecha crece a la derecha (día grande).
+- **Cotización de BTC en la cabecera**: `BTC $68,214` con la edad del dato (por ejemplo
+  *hace 3 h*). Se consulta en CoinGecko por HTTPS al abrir y al tocar el chip; se cachea
+  el último valor. Incluye las raíces de Let's Encrypt empaquetadas para que funcione en
+  Android 5.1 aunque el almacén del sistema sea del 2015.
+- **Tarjeta AGENDA** en el panel: las 2 próximas actividades del calendario del sistema,
+  hora + título; táctil y con mando: abre la app Calendario.
+- **Ajustes en la cabecera**: icono ⚙ arriba a la derecha (llega con **ARRIBA** desde la
+  fila SISTEMA; **B** vuelve a los mosaicos).
+- **Panel de sistema**: `Agenda | Avisos | Batería | Clima | Memoria`.
+- **Cabecera**: título NSP + chip BTC + fecha larga + **un solo reloj**, elegible en
+  Ajustes: **Analógico / Digital / Oculto**. Con el reloj oculto, la fecha crece a la
+  derecha (día grande).
 - **Pista de controles**: aparece al arrancar, se desvanece a los ~6 s y vuelve a salir si
   pulsas una tecla sin asignar (volumen, NVIDIA, medios…).
 - **Anillo de batería** en el panel: nivel como arco de 270 %, porcentaje en el centro, color
@@ -41,6 +50,7 @@ Windows Phone. Java puro, sin Gradle y sin dependencias externas.
 | Y | Mover la app a otra categoría; en Avisos, descartar los de esa app |
 | Long press | Menú de la app |
 | Cruceta / stick | Navegar por la rejilla |
+| ARRIBA (desde la fila SISTEMA) | Entrar a la cabecera (BTC y Ajustes) |
 | L1 / R1 | Sección anterior / siguiente |
 | SELECT | Cambiar tema oscuro / claro |
 | START | Recargar la lista de aplicaciones |
@@ -64,16 +74,37 @@ Reglas:
 **Notificaciones**: *Acceso a notificaciones* abre los ajustes del sistema. Al activarlo, cada
 mosaico muestra un contador y el mosaico **Avisos** permite ver y descartar los avisos.
 
-**Sistema**: *Usar NSP como inicio*, *Ajustes de Inicio del sistema*, *Recargar aplicaciones*.
+**Sistema**: *Usar NSP como inicio*, *Ajustes de Inicio del sistema*, *Recargar
+aplicaciones*, **Apagar consola…**.
 
-## Clima y privacidad
+### Apagar consola (una vez)
+
+"Apagar consola…" abre el **diálogo del sistema** (Apagar / Reiniciar) usando un servicio
+de accesibilidad mínimo. Para que funcione, actívalo una vez:
+
+1. **Ajustes → Apagar consola…** → **Abrir Acceso** (o directamente Ajustes → Accesibilidad).
+2. Activa **NSP · Menú de energía**.
+3. Vuelve y pulsa **Apagar consola…**: sale el diálogo nativo con Apagar / Reiniciar.
+
+El servicio no lee el contenido de la pantalla; solo llama a la acción global de energía
+cuando se lo piden.
+
+## Clima, BTC y privacidad
+
+## Clima, BTC y privacidad
 
 - Ciudad fija: **Ciudad de Guatemala** (14.6349, -90.5069), zona `America/Guatemala`.
-- Fuente: **Open-Meteo** por HTTP, sin clave de API y sin permiso de ubicación.
-- Se actualiza al abrir, al volver si el dato tiene más de 30 minutos, al tocar la tarjeta y
-  desde **Ajustes → Actualizar clima**.
-- Caché local; sin red se sigue mostrando el último dato.
-- Permisos: `INTERNET` y el permiso de binding del servicio de notificaciones
+- Clima: **Open-Meteo** por HTTP, sin clave de API y sin permiso de ubicación.
+- Cotización fija: precio del **BTC en USD** de **CoinGecko** por HTTPS.
+- Se actualizan al abrir el launcher, al volver (si el dato está viejo: 30 min el clima,
+  1 h el BTC), al tocar sus tarjetas y desde **Ajustes**.
+- Caché local de ambos; sin red se sigue mostrando el último dato (BTC muestra su edad).
+- **HTTPS en Android 5.1**: si el servidor exige una raíz que el almacén del sistema no
+  tiene (hoy, Let's Encrypt/ISRG), la app reintenta con la cotización usando las **raíces
+  ISRG X1/X2 empaquetadas** en el APK (`res/raw`). Es confianza **adicional**, solo para
+  esta app; no se toca el almacén del sistema ni las demás apps.
+- Permisos: `INTERNET`, `READ_CALENDAR` (lista de actividades en la tarjeta Agenda) y el
+  permiso de binding del servicio de notificaciones
   (`BIND_NOTIFICATION_LISTENER_SERVICE`, que el sistema exige para escuchar notificaciones).
 - Sin analítica, sin telemetría y sin servicios de Google.
 - El clima va por HTTP (sin cifrar): es un dato público y no se envía nada del dispositivo.
@@ -122,7 +153,7 @@ cd NSP
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-Salida: `dist\NSPLauncher-1.2.apk` y `dist\NSPLauncher.apk` (versionCode 7).
+Salida: `dist\NSPLauncher-1.3.apk` y `dist\NSPLauncher.apk` (versionCode 9).
 
 El script autodetecta el SDK y el JDK 8; también acepta:
 
@@ -147,7 +178,7 @@ Más detalle en [docs/BUILD.md](docs/BUILD.md). La numeración se explica en
 o:
 
 ```powershell
-adb install -r .\dist\NSPLauncher-1.2.apk
+adb install -r .\dist\NSPLauncher-1.3.apk
 adb shell am start -n com.nsp.launcher/.MainActivity
 ```
 
@@ -157,16 +188,21 @@ adb shell am start -n com.nsp.launcher/.MainActivity
 app/src/main/
   AndroidManifest.xml
   java/com/nsp/launcher/
-    MainActivity.java       inicio, foco 2D, rejilla, cabecera, menús
-    BackgroundManager.java  imagen de la galería, recorte, EXIF, brillo y modos
-    BatteryRingView.java    medidor circular de batería
-    ClockView.java          reloj analógico de la cabecera
-    Dashboard.java          tarjetas de batería, clima y memoria
-    WeatherIconView.java    iconos de clima dibujados
-    WeatherService.java     Open-Meteo + caché
+    MainActivity.java        inicio, foco 2D, rejilla, cabecera y chip BTC, menús
+    BackgroundManager.java   imagen de la galería, recorte, EXIF, brillo y modos
+    BatteryRingView.java     medidor circular de batería
+    ClockView.java           reloj analógico de la cabecera
+    Dashboard.java           tarjetas de batería, clima y memoria
+    WeatherIconView.java     iconos de clima dibujados
+    WeatherService.java      Open-Meteo + caché
     WeatherData.java
-    SettingsActivity.java   Ajustes
-    HomeUtil.java           alias de launcher e inicio actual
+    BtcService.java          precio BTC (CoinGecko HTTPS) + reintento con raíces emp. + caché
+    BtcData.java
+    TrustedRoots.java        fábrica TLS con las raíces ISRG empaquetadas
+    AgendaService.java       próximas actividades del calendario del sistema
+    PowerMenuService.java    servicio de accesibilidad para el menú de energía
+    SettingsActivity.java    Ajustes (incluye "Apagar consola…")
+    HomeUtil.java            alias de launcher e inicio actual
     AppRepository.java      apps, categorías, favoritos, recientes, caché
     AppEntry.java
     IconStore.java          caché de iconos en memoria y disco
