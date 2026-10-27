@@ -506,26 +506,16 @@ public class MainActivity extends Activity {
         container.addView(header, new LinearLayout.LayoutParams(-1, -2));
 
         LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setOrientation(LinearLayout.VERTICAL);
         row.setClipChildren(false);
         row.setClipToPadding(false);
         row.setPadding(dp(20), dp(4), dp(24), dp(12));
 
+        LinearLayout topRow = new LinearLayout(this);
+        topRow.setOrientation(LinearLayout.HORIZONTAL);
+
         Section section = new Section();
         section.title = "Sistema";
-
-        Tile agenda = makeAgendaTile(
-                new Runnable() {
-                    public void run() {
-                        openCalendarApp();
-                    }
-                });
-        LinearLayout.LayoutParams agendaParams = new LinearLayout.LayoutParams(dp(96), dp(96));
-        agendaParams.rightMargin = dp(6);
-        row.addView(agenda.view, agendaParams);
-        section.tiles.add(agenda);
-        agendaTile = agenda;
-        refreshAgenda();
 
         notificationTile = makeSystemTile("Avisos", R.mipmap.ic_notifications, 0xFF825A2C,
                 new Runnable() {
@@ -535,7 +525,7 @@ public class MainActivity extends Activity {
                 });
         LinearLayout.LayoutParams notificationParams = new LinearLayout.LayoutParams(dp(96), dp(96));
         notificationParams.rightMargin = dp(6);
-        row.addView(notificationTile.view, notificationParams);
+        topRow.addView(notificationTile.view, notificationParams);
         section.tiles.add(notificationTile);
         updateNotificationBadge();
 
@@ -545,7 +535,21 @@ public class MainActivity extends Activity {
                         fetchWeather(true);
                     }
                 });
-        row.addView(dashboard, new LinearLayout.LayoutParams(0, dp(96), 1f));
+        topRow.addView(dashboard, new LinearLayout.LayoutParams(0, dp(96), 1f));
+        row.addView(topRow, new LinearLayout.LayoutParams(-1, dp(96)));
+
+        LinearLayout bottomRow = new LinearLayout(this);
+        bottomRow.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams agendaParams = new LinearLayout.LayoutParams(0, dp(96), .85f);
+        agendaParams.topMargin = dp(6); agendaParams.rightMargin = dp(6);
+        Tile agenda = makeAgendaTile(new Runnable() { public void run() { openCalendarApp(); } });
+        bottomRow.addView(agenda.view, agendaParams); section.tiles.add(agenda); agendaTile = agenda;
+        Tile news = makeNewsTile();
+        LinearLayout.LayoutParams newsParams = new LinearLayout.LayoutParams(0, dp(96), 1.15f);
+        newsParams.topMargin = dp(6);
+        bottomRow.addView(news.view, newsParams); section.tiles.add(news);
+        row.addView(bottomRow, new LinearLayout.LayoutParams(-1, dp(102)));
+        refreshAgenda();
 
         container.addView(row, new LinearLayout.LayoutParams(-1, -2));
         content.addView(container, new LinearLayout.LayoutParams(-1, -2));
@@ -1089,6 +1093,17 @@ public class MainActivity extends Activity {
         return t;
     }
 
+    private Tile makeNewsTile() {
+        final Tile t = new Tile(); t.action = new Runnable() { public void run() { startActivity(new Intent(MainActivity.this, NewsActivity.class)); } };
+        t.normal = new GradientDrawable(); t.normal.setColor(0xFF1BA1E2);
+        t.focused = new GradientDrawable(); t.focused.setColor(0xFF1BA1E2); t.focused.setStroke(dp(3), isLight ? 0xFF111111 : C_WHITE);
+        LinearLayout card = new LinearLayout(this); card.setOrientation(LinearLayout.VERTICAL); card.setPadding(dp(12),dp(9),dp(12),dp(8)); card.setBackgroundDrawable(t.normal); card.setFocusable(true); card.setClickable(true);
+        TextView h=new TextView(this);h.setText("NOTICIAS");h.setTextSize(8);h.setTextColor(0xCCFFFFFF);h.setLetterSpacing(.15f);card.addView(h);
+        TextView a=new TextView(this);a.setText("Mundo · Deportes · Guatemala · Fútbol");a.setTextSize(12);a.setTextColor(C_WHITE);a.setSingleLine(true);a.setEllipsize(TextUtils.TruncateAt.END);LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(-1,-2);ap.topMargin=dp(12);card.addView(a,ap);
+        TextView b=new TextView(this);b.setText("A para leer titulares");b.setTextSize(8);b.setTextColor(0xCCFFFFFF);card.addView(b);
+        t.view=card; card.setOnClickListener(new View.OnClickListener(){public void onClick(View v){t.action.run();}});card.setOnFocusChangeListener(new View.OnFocusChangeListener(){public void onFocusChange(View v,boolean f){v.setBackgroundDrawable(f?t.focused:t.normal);v.animate().scaleX(f?1.03f:1f).scaleY(f?1.03f:1f).setDuration(90).start();}}); return t;
+    }
+
     private void buildBtcChip(LinearLayout headerRight) {
         btcChip = new LinearLayout(this);
         btcChip.setOrientation(LinearLayout.VERTICAL);
@@ -1492,6 +1507,10 @@ public class MainActivity extends Activity {
     }
 
     private void moveHorizontal(int direction) {
+        if (focusSection == 0) {
+            if (focusIndex == 1 || focusIndex == 2) { focusTile(0, direction < 0 ? 1 : 2); return; }
+            return;
+        }
         if (sections.isEmpty()) return;
         Section current = sections.get(focusSection);
         if (current.tiles.isEmpty()) return;
@@ -1504,6 +1523,12 @@ public class MainActivity extends Activity {
     }
 
     private void moveVertical(int direction) {
+        if (focusSection == 0) {
+            if (direction > 0 && focusIndex == 0) { focusTile(0, 1); return; }
+            if (direction < 0 && (focusIndex == 1 || focusIndex == 2)) { focusTile(0, 0); return; }
+            if (direction > 0 && (focusIndex == 1 || focusIndex == 2)) { moveSection(1, 0); return; }
+            return;
+        }
         if (sections.isEmpty()) return;
         Section current = sections.get(focusSection);
         if (current.tiles.isEmpty()) return;
@@ -1605,6 +1630,9 @@ public class MainActivity extends Activity {
                         if (headerFocus) exitHeader();
                         else if (!HomeUtil.isDefaultHome(this)) finish();
                     }
+                    return true;
+                case KeyEvent.KEYCODE_BUTTON_MODE:
+                    if (event.getRepeatCount() == 0) startActivity(new Intent(this, NewsActivity.class));
                     return true;
                 default:
                     if (isInformativeKey(code)) showHint();

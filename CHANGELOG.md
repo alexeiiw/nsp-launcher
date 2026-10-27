@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4
+
+- Panel SISTEMA de dos líneas: Avisos/Batería/Clima/Memoria y Agenda/Noticias.
+- Lector RSS: BBC Mundo, ESPN, Google News Guatemala y Fútbol; botón NVIDIA abre Noticias.
+- Corrección del servicio de accesibilidad para Menú de energía.
+- versionCode 10.
+
 ## 1.3
 
 - **Ajustes suben a la cabecera**: icono ⚙ en la esquina, alcanzable con ARRIBA desde la
@@ -96,3 +103,5 @@ pública es la 1.0, con `versionCode 5` para actualizar sobre cualquier compilac
 
 - Primer launcher Metro para API 22.
 - Apertura de apps y navegación básica con mando.
+
+

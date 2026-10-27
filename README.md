@@ -1,4 +1,4 @@
-# NSP Launcher 1.3
+# NSP Launcher 1.4
 
 **NSP = NVIDIA Shield Portable.**
 
@@ -153,7 +153,7 @@ cd NSP
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-Salida: `dist\NSPLauncher-1.3.apk` y `dist\NSPLauncher.apk` (versionCode 9).
+Salida: `dist\NSPLauncher-1.4.apk` y `dist\NSPLauncher.apk` (versionCode 10).
 
 El script autodetecta el SDK y el JDK 8; también acepta:
 
@@ -178,7 +178,7 @@ Más detalle en [docs/BUILD.md](docs/BUILD.md). La numeración se explica en
 o:
 
 ```powershell
-adb install -r .\dist\NSPLauncher-1.3.apk
+adb install -r .\dist\NSPLauncher-1.4.apk
 adb shell am start -n com.nsp.launcher/.MainActivity
 ```
 
@@ -252,3 +252,5 @@ Arquitectura y flujos en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 MIT. Ver [LICENSE](LICENSE).
 
 NSP Launcher no está afiliado a NVIDIA. SHIELD es una marca de NVIDIA Corporation.
+
+

@@ -250,3 +250,7 @@ Ver [BUILD.md](BUILD.md). Sin Gradle: `aapt2` → `javac` → `d8` → `jar` →
 - API usadas: `getExternalFilesDirs` (19), `setLetterSpacing` (21), `Theme.Material` (21),
   `ImmersiveSticky` (19), `AppWidgetHost` no usado.
 - Sin permisos de almacenamiento, ubicación ni servicios de Google.
+
+## 1.4
+- Sistema se distribuye en dos filas y Noticias abre NewsActivity/RssService.
+- RSS usa XmlPullParser, hilo aparte y fuentes BBC, ESPN y Google News.

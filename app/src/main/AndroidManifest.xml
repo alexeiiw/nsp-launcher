@@ -36,6 +36,14 @@
             android:screenOrientation="landscape"
             android:theme="@style/AppThemeDark" />
 
+        <activity
+            android:name=".NewsActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|navigation"
+            android:exported="false"
+            android:label="Noticias"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppThemeDark" />
+
         <activity-alias
             android:name=".HomeAlias"
             android:configChanges="orientation|screenSize|keyboardHidden|navigation"
@@ -64,8 +72,9 @@
 
         <service
             android:name=".PowerMenuService"
-            android:exported="false"
-            android:label="NSP · Menú de energía">
+            android:exported="true"
+            android:label="NSP · Menú de energía"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>

@@ -1,5 +1,11 @@
 # Versionado
 
+## Version 1.4
+
+- versionName: **1.4**.
+- versionCode: **10**.
+- Panel de dos lineas, lector RSS y correccion del servicio de energia.
+
 ## Versión 1.3
 
 - `versionName`: **1.3** (BTC en la cabecera, tarjeta de Agenda, Ajustes como ⚙ en la
@@ -59,3 +65,5 @@ prototipos y quedan reemplazadas por la 1.0 pública.
 - Firmar todas las actualizaciones con la **misma clave**; si cambia, Android no instala encima
   y hay que desinstalar (se pierden datos).
 - No publicar `keystore/` ni contraseñas.
+
+
