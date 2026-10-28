@@ -164,8 +164,7 @@ mismas claves. Si falta URL o token: “Falta la URL o el token” y no se guard
 - 1 barra ámbar/roja: error repetido o configuración inválida.
 - 0 barras: sin configurar.
 - Los colores exactos se ajustan al tema claro/oscuro durante la implementación.
-- Pendiente de confirmar: el logo actual tiene **4** barras; el usuario habló de “3”. Se
-  deja en 4 salvo indicación contraria.
+- El logo son **4 barras** (confirmado por el usuario el 28/10/2026). No se cambia.
 
 ## Seguridad
 
