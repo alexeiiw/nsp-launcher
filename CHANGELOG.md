@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.5
+
+- **RSS arreglado**: el parser limpia la etiqueta al cerrar, acepta CDATA y descarta texto
+  fuera de `item`; las filas vuelven a mostrar titulares. Foco visible, **A** abre el detalle,
+  **B** vuelve y los errores de red se muestran en pantalla.
+- **Previa en la tarjeta Noticias**: dos titulares, BBC Mundo y ESPN, con caché de 10 minutos.
+- **Agenda legible**: título 9sp y eventos 12.5sp.
+- **Versión y actualización visibles**: Ajustes muestra la versión y el estado; chip `↑1.6`
+  en la cabecera cuando hay una Release nueva.
+- **Certificados**: GTS Root R1/R3/R4, DigiCert Global Root G2 y Amazon Root CA 1 empaquetados
+  como reintento TLS (Google News y GitHub).
+- **Actualizador**: consulta la última Release una vez al día, descarga, valida paquete, firma
+  y `versionCode`, y abre el instalador. Android pide confirmación; sin root no hay instalación
+  silenciosa. En Android 5.1 el APK se entrega con `file://` desde la carpeta externa de la app
+  (el instalador de esa versión no acepta `content://`); en Android 7+ se usa `content://`.
+- **CASE**: cuatro LED en la cabecera, overlay con estado del sistema y voz del robot;
+  interruptor CASE/neutral en Ajustes.
+- **Búsqueda de Google**: lupa en la cabecera, overlay con teclado virtual, historial de cinco
+  búsquedas y apertura en Chrome o Firefox.
+- versionCode 11.
+
 ## 1.4
 
 - Panel SISTEMA de dos líneas: Avisos/Batería/Clima/Memoria y Agenda/Noticias.

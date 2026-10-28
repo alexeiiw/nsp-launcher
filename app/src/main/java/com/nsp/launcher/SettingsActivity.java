@@ -45,6 +45,8 @@ public class SettingsActivity extends Activity {
     private TextView notificationValue;
     private TextView backgroundValue;
     private TextView clockValue;
+    private TextView caseValue;
+    private TextView updateValue;
 
     private static final int REQ_PICK_IMAGE = 1001;
 
@@ -79,7 +81,7 @@ public class SettingsActivity extends Activity {
         header.addView(title, new LinearLayout.LayoutParams(-2, -2));
 
         TextView hint = new TextView(this);
-        hint.setText("A elegir  |  B volver");
+        hint.setText("v" + UpdateService.installedVersion(this) + " · A elegir  |  B volver");
         hint.setTextSize(9);
         hint.setTextColor(isLight ? 0xFF666666 : 0xFF9E9E9E);
         hint.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
@@ -192,8 +194,46 @@ public class SettingsActivity extends Activity {
             }
         });
 
+        addLabel(content, "CASE");
+        caseValue = addRow(content, "Personalidad", "", new Runnable() {
+            public void run() {
+                boolean on = !prefs.getBoolean("case_voice", true);
+                prefs.edit().putBoolean("case_voice", on).apply();
+                updateValues();
+            }
+        });
+
+        addRow(content, "Abrir CASE", "Ahora", new Runnable() {
+            public void run() {
+                startActivity(new Intent(SettingsActivity.this, CaseActivity.class));
+            }
+        });
+
+        addLabel(content, "ACERCA DE");
+        addRow(content, "Versión",
+                UpdateService.installedVersion(this) + " · código "
+                        + UpdateService.installedCode(this),
+                new Runnable() {
+                    public void run() {
+                        showAbout();
+                    }
+                });
+
+        updateValue = addRow(content, "Actualización",
+                UpdateService.statusText(this), new Runnable() {
+                    public void run() {
+                        updateValue.setText("Comprobando…");
+                        UpdateFlow.checkPrompt(SettingsActivity.this, new Runnable() {
+                            public void run() {
+                                updateValues();
+                            }
+                        });
+                    }
+                });
+
         TextView footer = new TextView(this);
-        footer.setText("NSP 1.3\nAndroid 5.1 · " + WeatherService.CITY);
+        footer.setText("NSP " + UpdateService.installedVersion(this)
+                + "\nAndroid 5.1 · " + WeatherService.CITY);
         footer.setTextSize(9);
         footer.setTextColor(isLight ? 0xFF888888 : 0xFF777777);
         footer.setPadding(dp(24), dp(20), dp(24), dp(24));
@@ -317,6 +357,28 @@ public class SettingsActivity extends Activity {
                 homeValue.setText("Desactivado");
             }
         }
+        if (caseValue != null) {
+            caseValue.setText(prefs.getBoolean("case_voice", true) ? "CASE" : "Neutral");
+        }
+        if (updateValue != null) {
+            updateValue.setText(UpdateService.statusText(this));
+        }
+    }
+
+    private void showAbout() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("NSP " + UpdateService.installedVersion(this));
+        builder.setMessage("Launcher para NVIDIA Shield Portable.\n"
+                + "Android 5.1.1 · API 22\n\n"
+                + "https://github.com/alexeiiw/nsp-launcher");
+        builder.setPositiveButton("Abrir GitHub", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                BrowserUtil.open(SettingsActivity.this,
+                        "https://github.com/alexeiiw/nsp-launcher");
+            }
+        });
+        builder.setNegativeButton("Cerrar", null);
+        builder.show();
     }
 
     private void updateWeatherStatus() {

@@ -254,3 +254,11 @@ Ver [BUILD.md](BUILD.md). Sin Gradle: `aapt2` → `javac` → `d8` → `jar` →
 ## 1.4
 - Sistema se distribuye en dos filas y Noticias abre NewsActivity/RssService.
 - RSS usa XmlPullParser, hilo aparte y fuentes BBC, ESPN y Google News.
+
+## 1.5
+- RssService: parser por etiqueta con CDATA, cache de 10 min y reintento TLS.
+- TrustedRoots: ISRG X1/X2, GTS R1/R3/R4, DigiCert Global Root G2 y Amazon Root CA 1.
+- UpdateService + ApkProvider: Releases de GitHub, validacion de paquete/firma/versionCode y content:// para el instalador.
+- SearchActivity: overlay con teclado virtual, historial de cinco busquedas y Chrome/Firefox.
+- CaseActivity y CaseView: LED de cuatro segmentos, estado del sistema y voz CASE.
+- Ajustes muestra version, estado de actualizacion e interruptor CASE/neutral.

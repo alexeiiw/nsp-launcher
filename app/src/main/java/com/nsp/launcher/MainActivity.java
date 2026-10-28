@@ -85,6 +85,7 @@ public class MainActivity extends Activity {
     private TextView btcValue;
     private TextView btcStatus;
     private ImageView settingsGear;
+    private ScrollView mainScroll;
     private boolean btcLoading;
     private String btcError;
     private final ArrayList<View> headerItems = new ArrayList<View>();
@@ -93,6 +94,14 @@ public class MainActivity extends Activity {
     private Tile agendaTile;
     private TextView agendaLine1;
     private TextView agendaLine2;
+    private TextView newsLine1;
+    private TextView newsLine2;
+    private boolean newsLoading;
+    private ImageView searchIcon;
+    private CaseView caseMark;
+    private TextView updateChip;
+    private String updateVersion;
+    private boolean updateChecking;
     private boolean weatherLoading = false;
     private boolean recentsDirty = false;
     private BroadcastReceiver packageReceiver;
@@ -406,7 +415,10 @@ public class MainActivity extends Activity {
             }
         }
 
+        buildSearchButton(headerRight);
+        buildUpdateChip(headerRight);
         buildSettingsGear(headerRight);
+        buildCaseMark(headerRight);
 
         header.addView(headerRight, new LinearLayout.LayoutParams(-2, -2));
 
@@ -416,6 +428,7 @@ public class MainActivity extends Activity {
         scroll.setVerticalScrollBarEnabled(false);
         scroll.setClipChildren(false);
         scroll.setClipToPadding(false);
+        mainScroll = scroll;
         content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         content.setClipChildren(false);
@@ -480,7 +493,10 @@ public class MainActivity extends Activity {
             public void run() {
                 boolean restored = false;
                 if (focusPkg != null) restored = focusByPackage(focusPkg);
-                if (!restored) focusFirstApp();
+                if (!restored) {
+                    focusFirstApp();
+                    scrollToTop();
+                }
             }
         });
 
@@ -550,6 +566,7 @@ public class MainActivity extends Activity {
         bottomRow.addView(news.view, newsParams); section.tiles.add(news);
         row.addView(bottomRow, new LinearLayout.LayoutParams(-1, dp(102)));
         refreshAgenda();
+        refreshNewsPreview();
 
         container.addView(row, new LinearLayout.LayoutParams(-1, -2));
         content.addView(container, new LinearLayout.LayoutParams(-1, -2));
@@ -1048,27 +1065,29 @@ public class MainActivity extends Activity {
 
         TextView title = new TextView(this);
         title.setText("AGENDA");
-        title.setTextSize(7);
+        title.setTextSize(9);
         title.setTextColor(0xCCFFFFFF);
         title.setLetterSpacing(0.15f);
         title.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
         card.addView(title, new LinearLayout.LayoutParams(-2, -2));
 
         agendaLine1 = new TextView(this);
-        agendaLine1.setTextSize(8);
+        agendaLine1.setTextSize(12.5f);
         agendaLine1.setTextColor(C_WHITE);
         agendaLine1.setSingleLine(true);
         agendaLine1.setEllipsize(TextUtils.TruncateAt.END);
         LinearLayout.LayoutParams line1Params = new LinearLayout.LayoutParams(-1, -2);
-        line1Params.topMargin = dp(6);
+        line1Params.topMargin = dp(5);
         card.addView(agendaLine1, line1Params);
 
         agendaLine2 = new TextView(this);
-        agendaLine2.setTextSize(8);
-        agendaLine2.setTextColor(0xCCFFFFFF);
+        agendaLine2.setTextSize(12.5f);
+        agendaLine2.setTextColor(0xE6FFFFFF);
         agendaLine2.setSingleLine(true);
         agendaLine2.setEllipsize(TextUtils.TruncateAt.END);
-        card.addView(agendaLine2, new LinearLayout.LayoutParams(-1, -2));
+        LinearLayout.LayoutParams line2Params = new LinearLayout.LayoutParams(-1, -2);
+        line2Params.topMargin = dp(2);
+        card.addView(agendaLine2, line2Params);
 
         t.view = card;
 
@@ -1094,14 +1113,105 @@ public class MainActivity extends Activity {
     }
 
     private Tile makeNewsTile() {
-        final Tile t = new Tile(); t.action = new Runnable() { public void run() { startActivity(new Intent(MainActivity.this, NewsActivity.class)); } };
-        t.normal = new GradientDrawable(); t.normal.setColor(0xFF1BA1E2);
-        t.focused = new GradientDrawable(); t.focused.setColor(0xFF1BA1E2); t.focused.setStroke(dp(3), isLight ? 0xFF111111 : C_WHITE);
-        LinearLayout card = new LinearLayout(this); card.setOrientation(LinearLayout.VERTICAL); card.setPadding(dp(12),dp(9),dp(12),dp(8)); card.setBackgroundDrawable(t.normal); card.setFocusable(true); card.setClickable(true);
-        TextView h=new TextView(this);h.setText("NOTICIAS");h.setTextSize(8);h.setTextColor(0xCCFFFFFF);h.setLetterSpacing(.15f);card.addView(h);
-        TextView a=new TextView(this);a.setText("Mundo · Deportes · Guatemala · Fútbol");a.setTextSize(12);a.setTextColor(C_WHITE);a.setSingleLine(true);a.setEllipsize(TextUtils.TruncateAt.END);LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(-1,-2);ap.topMargin=dp(12);card.addView(a,ap);
-        TextView b=new TextView(this);b.setText("A para leer titulares");b.setTextSize(8);b.setTextColor(0xCCFFFFFF);card.addView(b);
-        t.view=card; card.setOnClickListener(new View.OnClickListener(){public void onClick(View v){t.action.run();}});card.setOnFocusChangeListener(new View.OnFocusChangeListener(){public void onFocusChange(View v,boolean f){v.setBackgroundDrawable(f?t.focused:t.normal);v.animate().scaleX(f?1.03f:1f).scaleY(f?1.03f:1f).setDuration(90).start();}}); return t;
+        final Tile t = new Tile();
+        t.action = new Runnable() {
+            public void run() {
+                startActivity(new Intent(MainActivity.this, NewsActivity.class));
+            }
+        };
+        t.normal = new GradientDrawable();
+        t.normal.setColor(0xFF1BA1E2);
+        t.focused = new GradientDrawable();
+        t.focused.setColor(0xFF1BA1E2);
+        t.focused.setStroke(dp(3), isLight ? 0xFF111111 : C_WHITE);
+
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(12), dp(8), dp(12), dp(7));
+        card.setBackgroundDrawable(t.normal);
+        card.setFocusable(true);
+        card.setClickable(true);
+
+        TextView header = new TextView(this);
+        header.setText("NOTICIAS");
+        header.setTextSize(8);
+        header.setTextColor(0xCCFFFFFF);
+        header.setLetterSpacing(0.15f);
+        card.addView(header);
+
+        newsLine1 = new TextView(this);
+        newsLine1.setTextSize(12);
+        newsLine1.setTextColor(C_WHITE);
+        newsLine1.setSingleLine(true);
+        newsLine1.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams firstParams = new LinearLayout.LayoutParams(-1, -2);
+        firstParams.topMargin = dp(5);
+        card.addView(newsLine1, firstParams);
+
+        newsLine2 = new TextView(this);
+        newsLine2.setTextSize(10);
+        newsLine2.setTextColor(0xE6FFFFFF);
+        newsLine2.setSingleLine(true);
+        newsLine2.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams secondParams = new LinearLayout.LayoutParams(-1, -2);
+        secondParams.topMargin = dp(3);
+        card.addView(newsLine2, secondParams);
+
+        t.view = card;
+        card.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                t.action.run();
+            }
+        });
+        card.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            public void onFocusChange(View v, boolean f) {
+                v.setBackgroundDrawable(f ? t.focused : t.normal);
+                v.animate().scaleX(f ? 1.03f : 1f).scaleY(f ? 1.03f : 1f).setDuration(90).start();
+            }
+        });
+        return t;
+    }
+
+    private void refreshNewsPreview() {
+        if (newsLine1 == null || newsLoading) return;
+        applyNewsPreview();
+        if (RssService.peek(0) != null && RssService.peek(1) != null) return;
+
+        newsLoading = true;
+        newsLine1.setText("Actualizando…");
+        newsLine2.setText("");
+        final int[] pending = {2};
+        RssService.Callback callback = new RssService.Callback() {
+            public void done(ArrayList<RssItem> result, String error) {
+                pending[0]--;
+                if (pending[0] > 0) return;
+                newsLoading = false;
+                applyNewsPreview();
+            }
+        };
+        RssService.load(this, 0, callback);
+        RssService.load(this, 1, callback);
+    }
+
+    private void applyNewsPreview() {
+        if (newsLine1 == null) return;
+        RssItem world = firstItem(0);
+        RssItem sports = firstItem(1);
+        if (world == null && sports == null) {
+            newsLine1.setText("Sin titulares");
+            newsLine2.setText("A para reintentar");
+            return;
+        }
+        if (world != null) newsLine1.setText("BBC · " + world.title);
+        else newsLine1.setText("BBC · sin titulares");
+        if (sports != null) newsLine2.setText("ESPN · " + sports.title);
+        else newsLine2.setText("ESPN · sin titulares");
+    }
+
+    private RssItem firstItem(int cat) {
+        ArrayList<RssItem> list = RssService.peek(cat);
+        if (list == null || list.isEmpty()) return null;
+        return list.get(0);
     }
 
     private void buildBtcChip(LinearLayout headerRight) {
@@ -1156,9 +1266,80 @@ public class MainActivity extends Activity {
         });
     }
 
+    private void buildSearchButton(LinearLayout headerRight) {
+        searchIcon = new ImageView(this);
+        searchIcon.setImageResource(android.R.drawable.ic_menu_search);
+        searchIcon.setColorFilter(textColor());
+        searchIcon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        searchIcon.setClickable(true);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(22), dp(22));
+        params.leftMargin = dp(10);
+        headerRight.addView(searchIcon, params);
+        headerItems.add(searchIcon);
+        searchIcon.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                openSearch();
+            }
+        });
+    }
+
+    private void buildCaseMark(LinearLayout headerRight) {
+        caseMark = new CaseView(this);
+        caseMark.setColors(isLight ? 0xFF0050EF : 0xFF1BA1E2, 0x33FFFFFF);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(16), dp(22));
+        params.leftMargin = dp(10);
+        headerRight.addView(caseMark, params);
+        headerItems.add(caseMark);
+        caseMark.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                openCase();
+            }
+        });
+    }
+
+    private void buildUpdateChip(LinearLayout headerRight) {
+        updateChip = new TextView(this);
+        updateChip.setTextSize(9);
+        updateChip.setTextColor(isLight ? 0xFF0050EF : 0xFF7FD3FF);
+        updateChip.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        updateChip.setPadding(dp(6), dp(3), dp(6), dp(3));
+        updateChip.setVisibility(View.GONE);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-2, -2);
+        params.leftMargin = dp(8);
+        headerRight.addView(updateChip, params);
+        headerItems.add(updateChip);
+        updateChip.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                checkUpdates(true);
+            }
+        });
+    }
+
+    private void openSearch() {
+        headerFocus = false;
+        updateHeaderSelection();
+        startActivity(new Intent(this, SearchActivity.class));
+    }
+
+    private void openCase() {
+        headerFocus = false;
+        updateHeaderSelection();
+        startActivity(new Intent(this, CaseActivity.class));
+    }
+
     private void enterHeader() {
         headerFocus = true;
-        headerPos = headerItems.size() - 1;
+        headerPos = -1;
+        for (int i = headerItems.size() - 1; i >= 0; i--) {
+            if (headerItems.get(i).getVisibility() == View.VISIBLE) {
+                headerPos = i;
+                break;
+            }
+        }
+        if (headerPos < 0) {
+            headerFocus = false;
+            return;
+        }
         View current = getCurrentFocus();
         if (current != null && current != btcChip && current != settingsGear) {
             current.clearFocus();
@@ -1174,10 +1355,17 @@ public class MainActivity extends Activity {
     }
 
     private void moveHeader(int direction) {
-        int next = headerPos + direction;
-        if (next < 0 || next >= headerItems.size()) return;
-        headerPos = next;
-        updateHeaderSelection();
+        if (headerItems.isEmpty()) return;
+        int next = headerPos;
+        for (int step = 0; step < headerItems.size(); step++) {
+            next += direction;
+            if (next < 0 || next >= headerItems.size()) return;
+            if (headerItems.get(next).getVisibility() == View.VISIBLE) {
+                headerPos = next;
+                updateHeaderSelection();
+                return;
+            }
+        }
     }
 
     private void openHeaderItem() {
@@ -1189,6 +1377,12 @@ public class MainActivity extends Activity {
             headerFocus = false;
             updateHeaderSelection();
             openSettings();
+        } else if (v == searchIcon) {
+            openSearch();
+        } else if (v == caseMark) {
+            openCase();
+        } else if (v == updateChip) {
+            checkUpdates(true);
         }
     }
 
@@ -1255,6 +1449,123 @@ public class MainActivity extends Activity {
                 }
             }
         });
+    }
+
+    private void checkUpdates(final boolean manual) {
+        if (updateChecking) return;
+        updateChecking = true;
+        if (manual) toast("Buscando actualización…");
+        UpdateService.check(this, manual, new UpdateService.CheckCallback() {
+            public void onResult(UpdateService.Release release, String error) {
+                updateChecking = false;
+                if (release != null) {
+                    updateVersion = release.version;
+                    if (updateChip != null) {
+                        updateChip.setText("↑ " + release.version);
+                        updateChip.setVisibility(View.VISIBLE);
+                    }
+                    if (manual) showUpdateDialog(release);
+                } else {
+                    updateVersion = null;
+                    if (updateChip != null) updateChip.setVisibility(View.GONE);
+                    if (manual) {
+                        toast(error == null ? "NSP está al día" : "No se pudo comprobar: " + error);
+                    }
+                }
+            }
+        });
+    }
+
+    private void showUpdateDialog(final UpdateService.Release release) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("NSP " + release.version + " disponible");
+        builder.setMessage("Instalada: " + UpdateService.installedVersion(this)
+                + "\nNueva: " + release.version
+                + (release.size > 0 ? "\nTamaño: " + (release.size / 1024) + " KB" : "")
+                + "\n\nAndroid pedirá confirmación para instalar.");
+        builder.setPositiveButton("Descargar", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                downloadUpdate(release);
+            }
+        });
+        builder.setNegativeButton("Ahora no", null);
+
+        final AlertDialog dialog = builder.create();
+        dialogOpen = true;
+        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            public void onDismiss(DialogInterface d) {
+                dialogOpen = false;
+            }
+        });
+        dialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
+            public boolean onKey(DialogInterface d, int keyCode, KeyEvent event) {
+                if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
+                if (keyCode == KeyEvent.KEYCODE_BUTTON_B) {
+                    d.dismiss();
+                    return true;
+                }
+                if (keyCode == KeyEvent.KEYCODE_BUTTON_A) {
+                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+                    return true;
+                }
+                return false;
+            }
+        });
+        dialog.show();
+    }
+
+    private void downloadUpdate(final UpdateService.Release release) {
+        final AlertDialog progress = new AlertDialog.Builder(this)
+                .setTitle("Descargando NSP " + release.version)
+                .setMessage("0 %")
+                .setCancelable(false)
+                .create();
+        dialogOpen = true;
+        progress.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            public void onDismiss(DialogInterface d) {
+                dialogOpen = false;
+            }
+        });
+        progress.show();
+
+        UpdateService.download(this, release, new UpdateService.DownloadCallback() {
+            public void onProgress(final int percent) {
+                ui.post(new Runnable() {
+                    public void run() {
+                        progress.setMessage(percent + " %");
+                    }
+                });
+            }
+
+            public void onResult(final String path, final String error) {
+                ui.post(new Runnable() {
+                    public void run() {
+                        try {
+                            progress.dismiss();
+                        } catch (Exception ignored) {
+                        }
+                        if (path == null) {
+                            showUpdateError(release, error);
+                        } else if (!UpdateService.install(MainActivity.this, path)) {
+                            showUpdateError(release, "No se pudo abrir el instalador");
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    private void showUpdateError(final UpdateService.Release release, String error) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("No se pudo actualizar");
+        builder.setMessage(error == null ? "Error desconocido" : error);
+        builder.setPositiveButton("Abrir Release", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                BrowserUtil.open(MainActivity.this, release.pageUrl);
+            }
+        });
+        builder.setNegativeButton("Cerrar", null);
+        builder.show();
     }
 
     private void refreshAgenda() {
@@ -1344,13 +1655,22 @@ public class MainActivity extends Activity {
     private void focusFirstApp() {
         for (int si = 0; si < sections.size(); si++) {
             Section s = sections.get(si);
-            if ("Sistema".equals(s.title)) continue;
             if (!s.tiles.isEmpty()) {
                 focusTile(si, 0);
                 return;
             }
         }
-        if (!sections.isEmpty()) focusTile(0, 0);
+    }
+
+    /** Deja el panel arriba al abrir: SISTEMA visible y sin desplazamiento heredado. */
+    private void scrollToTop() {
+        final ScrollView scroll = mainScroll;
+        if (scroll == null) return;
+        scroll.post(new Runnable() {
+            public void run() {
+                scroll.scrollTo(0, 0);
+            }
+        });
     }
 
     private String focusedPackage() {
@@ -2123,7 +2443,9 @@ public class MainActivity extends Activity {
         updateHeaderClock();
         updateNotificationBadge();
         refreshAgenda();
+        refreshNewsPreview();
         maybeRefreshBtc();
+        checkUpdates(false);
         ui.removeCallbacks(headerTicker);
         ui.postDelayed(headerTicker, 1000);
 

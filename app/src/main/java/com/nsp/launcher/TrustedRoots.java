@@ -14,9 +14,10 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
 /**
- * SSL socket factory alternativo: confía SOLO en las raíces que empaquetamos
- * (ISRG Root X1/X2 de Let's Encrypt). Se usa como reintento cuando el almacén
- * del sistema del dispositivo (de 2015) no conoce esas raíces.
+ * SSL socket factory alternativo: confía SOLO en las raíces que empaquetamos.
+ * Se usa como reintento cuando el almacén del sistema del dispositivo (de 2015)
+ * no conoce esas raíces: Let's Encrypt (ISRG), Google Trust Services (GTS),
+ * DigiCert y Amazon.
  */
 public final class TrustedRoots {
 
@@ -30,7 +31,15 @@ public final class TrustedRoots {
         try {
             CertificateFactory certificates = CertificateFactory.getInstance("X.509");
             List<Certificate> roots = new ArrayList<Certificate>();
-            int[] ids = {R.raw.isrgrootx1, R.raw.isrgrootx2};
+            int[] ids = {
+                    R.raw.isrgrootx1,
+                    R.raw.isrgrootx2,
+                    R.raw.gtsrootr1,
+                    R.raw.gtsrootr3,
+                    R.raw.gtsrootr4,
+                    R.raw.digicertglobalg2,
+                    R.raw.amazonrootca1
+            };
             for (int id : ids) {
                 InputStream in = context.getResources().openRawResource(id);
                 try {
@@ -44,7 +53,7 @@ public final class TrustedRoots {
             store.load(null, null);
             int index = 0;
             for (Certificate root : roots) {
-                store.setCertificateEntry("isrg" + (index++), root);
+                store.setCertificateEntry("nsp" + (index++), root);
             }
             TrustManagerFactory trust = TrustManagerFactory.getInstance(
                     TrustManagerFactory.getDefaultAlgorithm());

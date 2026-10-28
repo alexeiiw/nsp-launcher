@@ -44,6 +44,29 @@
             android:screenOrientation="landscape"
             android:theme="@style/AppThemeDark" />
 
+        <activity
+            android:name=".CaseActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|navigation"
+            android:exported="false"
+            android:label="CASE"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppThemeDark" />
+
+        <activity
+            android:name=".SearchActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|navigation"
+            android:exported="false"
+            android:label="Buscar"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppThemeDark"
+            android:windowSoftInputMode="stateAlwaysVisible|adjustResize" />
+
+        <provider
+            android:name=".ApkProvider"
+            android:authorities="com.nsp.launcher.apk"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+
         <activity-alias
             android:name=".HomeAlias"
             android:configChanges="orientation|screenSize|keyboardHidden|navigation"

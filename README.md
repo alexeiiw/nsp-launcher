@@ -1,4 +1,4 @@
-# NSP Launcher 1.4
+# NSP Launcher 1.5
 
 **NSP = NVIDIA Shield Portable.**
 
@@ -153,7 +153,7 @@ cd NSP
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-Salida: `dist\NSPLauncher-1.4.apk` y `dist\NSPLauncher.apk` (versionCode 10).
+Salida: `dist\NSPLauncher-1.5.apk` y `dist\NSPLauncher.apk` (versionCode 11).
 
 El script autodetecta el SDK y el JDK 8; también acepta:
 
@@ -178,7 +178,7 @@ Más detalle en [docs/BUILD.md](docs/BUILD.md). La numeración se explica en
 o:
 
 ```powershell
-adb install -r .\dist\NSPLauncher-1.4.apk
+adb install -r .\dist\NSPLauncher-1.5.apk
 adb shell am start -n com.nsp.launcher/.MainActivity
 ```
 

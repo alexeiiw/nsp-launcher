@@ -1,6 +1,14 @@
 # Versionado
 
-## Version 1.4
+## Versión 1.5
+
+- `versionName`: **1.5**.
+- `versionCode`: **11**.
+- RSS funcional, previa en la tarjeta, agenda legible, certificados GTS/DigiCert/Amazon,
+  actualizador desde GitHub, CASE (LED, voz y overlay) y búsqueda de Google.
+- Última instalación manual: a partir de la 1.6 las versiones llegan por el actualizador.
+
+## Versión 1.4
 
 - versionName: **1.4**.
 - versionCode: **10**.
