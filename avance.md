@@ -68,7 +68,8 @@ Estado: **publicada** (28/10/2026).
 ## Análisis 1.6 (cerrado, sin implementar)
 
 - 2026-10-28: se descarta el banner y la voz; CASE pasa a ser un panel con el mensaje
-  completo que devuelve el endpoint, sin parser.
+  completo (o el enlace) que devuelve el endpoint, sin parser. En documentación se llama
+  “Módulo CASE”, una funcionalidad adicional del APK.
 - Punto de entrada: el título de la cabecera pasa de `NSP` a `CASE` y se convierte en
   botón; las cuatro barras quedan solo como indicador. El bloque de fecha no es botón.
 - URL y token nunca en el repo ni en el APK: se pegan en Ajustes o se importan de

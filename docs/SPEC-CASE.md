@@ -1,13 +1,17 @@
-# CASE 1.6 — especificación
+# Módulo CASE 1.6 — especificación
 
 Estado: **análisis cerrado** (28/10/2026). No implementado. Este documento es la
-referencia para construir la 1.6; cualquier cambio de alcance se anota aquí primero.
+referencia para construir la 1.6 en otra sesión; cualquier cambio de alcance se anota
+aquí primero.
+
+En la documentación la función se llama **Módulo CASE** (o “Consulta CASE”): una
+funcionalidad adicional del APK, no el núcleo del launcher. En pantalla se llama `CASE`.
 
 ## Objetivo
 
-Un botón en la pantalla principal abre un panel con **el mensaje completo** que
-devuelve el endpoint de CASE. El mensaje se muestra tal cual llega: sin parser, sin
-resumen, sin banner y sin voz.
+Un botón en la portada (el título `CASE`) abre un panel con **el mensaje completo** que
+devuelve el endpoint, o con el **enlace** si lo que devuelve es una URL. Se muestra tal
+cual llega: sin parser, sin resumen, sin banner y sin voz.
 
 ## Decisiones cerradas
 
@@ -58,6 +62,17 @@ resumen, sin banner y sin voz.
 - Si hay texto en caché, siempre se muestra algo: nunca una pantalla vacía.
 - El scroll con arriba/abajo del mando; no hay foco interno en el texto.
 - Girar la pantalla no aplica (landscape fijo).
+
+### Texto o enlace
+
+- Si la respuesta es texto (lo normal), se muestra completa y con scroll.
+- Si la respuesta es **una URL** (`http://` o `https://`), el panel la muestra igual y
+  ofrece `A abrir enlace`, que la abre con Chrome o Firefox usando `BrowserUtil` (el mismo
+  camino de la búsqueda).
+- Si el texto contiene una URL mezclada con prosa, se muestra tal cual y se ofrece
+  `A abrir enlace` para la primera URL encontrada, sin quitar el texto.
+- El enlace no se descarga ni se convierte: se abre en el navegador del sistema.
+- Si el JSON trae `respuesta_plana` vacío pero `respuesta` con contenido, se usa `respuesta`.
 
 ## Ajustes — Configuración CASE
 
@@ -177,15 +192,110 @@ mismas claves. Si falta URL o token: “Falta la URL o el token” y no se guard
 10. `adb shell run-as` no es necesario para nada; el APK no contiene el token.
 11. `git grep` del repo no encuentra ni la URL ni el token.
 
-## Archivos previstos
+## Cambios por archivo
 
-- `CaseActivity.java`: reescritura como panel del reporte (se retira estado/voz).
-- `CaseService.java` (nuevo): POST, 302 manual, GET único, UTF-8, caché, slots.
-- `SettingsActivity.java`: bloque “Configuración CASE” con cuadro, importar, probar, borrar.
-- `MainActivity.java`: título `CASE` como botón; barras solo como indicador; el bloque de
-  fecha no cambia.
-- `strings.xml` / `AndroidManifest.xml`: etiquetas y textos.
-- `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `avance.md`: al implementar.
+### `MainActivity.java`
+
+- Línea ~339: `title.setText("NSP")` → `title.setText("CASE")`; se mantiene 28sp y la
+  tipografía fina. Añadir `padding` interno para que el resaltado del foco no se recorte.
+- Guardar la referencia (`homeTitle`) y registrarla como **primer** elemento:
+  `headerItems.add(0, homeTitle)`.
+- `updateHeaderSelection()`: hoy solo escala; el título no debe escalar (movería el
+  header). Caso especial: si `v == homeTitle`, cambiar el color al azul de acento cuando
+  está seleccionado y volver al color normal al salir; el resto sigue con la escala 1.12.
+- `openHeaderItem()`: añadir la rama `v == homeTitle → openCase()`.
+- `buildCaseMark()`: quitar `setOnClickListener` y **no** añadirlo a `headerItems`; las
+  barras dejan de ser botón y dejan de detener el recorrido. Quitar su rama de
+  `openHeaderItem()`.
+- `openCase()` se conserva igual: `startActivity(new Intent(this, CaseActivity.class))`.
+- Al volver del panel (si se abrió desde el título), devolver el foco al título:
+  `headerFocus = true; headerPos = 0; updateHeaderSelection();` en `onResume`, solo si se
+  recuerda que la apertura vino del título.
+- Indicador: tras cada consulta y en `onResume`, leer el estado de `CaseService` y llamar
+  `caseMark.setLit(...)`.
+- El bloque de fecha no se toca.
+
+### `CaseView.java`
+
+- Sin cambios funcionales: sigue dibujando 4 barras. Opcional: color de error para el
+  estado rojo. No recibe clics.
+
+### `CaseActivity.java` (reescritura)
+
+- Se retira todo lo de la 1.5: voz, `case_voice`, líneas NSP/actualización/batería/clima/
+  BTC/noticias y la tecla A de comprobar actualización.
+- Cabecera: barras + `CASE` + `UNIDAD DE SOPORTE · NSP`; a la derecha, la marca de tiempo.
+- Cuerpo: `ScrollView` con un `TextView` de 15sp; se rellena con `CaseService` (caché o
+  respuesta).
+- Pie: `A actualizar | B volver` (o `A abrir enlace` si hay URL; o `B cancelar` mientras
+  consulta).
+- `onKeyDown`: A ejecuta acción, B cierra. Flechas: scroll del `ScrollView`.
+- `onResume`: pinta la caché; si el slot está vencido, lanza una consulta.
+
+### `CaseService.java` (nuevo, patrón de `BtcService`)
+
+- Preferencias en `SharedPreferences("nsp")`: `case_url`, `case_token`, `case_canal`,
+  `case_texto`, `case_body`, `case_time`, `case_status`.
+- `loadConfig`, `saveConfig`, `clearConfig`, `isConfigured`, `maskedToken`.
+- `refresh(Context, Callback)`: POST + `302` manual + un `GET` + UTF-8, en un hilo; callback
+  en el hilo principal.
+- `isDue(Context)`: calcula el slot 08:00/20:00 con `Calendar` y compara con `case_time`.
+- Caché: texto, hora y estado; se conserva el último bueno si falla.
+
+### `SettingsActivity.java`
+
+- Nuevo bloque “CASE” debajo del actualizador, con el mismo estilo de filas y foco.
+- `EditText` multilínea (8–10 líneas, monoespaciado 12sp, `textMultiLine`), para pegar el
+  bloque completo.
+- Filas: **Guardar**, **Importar desde archivo**, **Probar**, **Borrar configuración**.
+- Estado: `Configurado · token ••••1234 · última 28 oct 08:02` o `Sin configurar`.
+- Importar: intenta `getExternalFilesDir(null)/case.txt` (sin permisos) y luego
+  `Download/case.txt` (`Environment.getExternalStoragePublicDirectory`, requiere
+  `READ_EXTERNAL_STORAGE`; en API 22 es permiso de instalación, en 23+ hay que pedirlo).
+- Al guardar: parsea, valida, guarda, limpia el cuadro y muestra el token enmascarado.
+- Se elimina la fila del interruptor de voz `CASE / neutral` y su código.
+
+### `AndroidManifest.xml` / `strings.xml`
+
+- `CaseActivity` ya tiene `label="CASE"`; se conserva.
+- `app_name` sigue siendo **NSP**: no se renombra la app.
+- Si se importa desde `Download/`: añadir `READ_EXTERNAL_STORAGE`.
+
+### Documentación al implementar
+
+- `docs/ROADMAP.md` (marcar 1.6), `docs/ARCHITECTURE.md` (módulo CASE y `CaseService`),
+  `docs/CHANGELOG.md`, `docs/BUILD.md` (versionCode), `avance.md`.
+
+## Orden de implementación
+
+1. Respaldo del APK 1.5 en `backups/` antes de compilar.
+2. `versionCode 12`, `versionName 1.6`, misma firma.
+3. `CaseService` (red, caché, slots) y pruebas con el endpoint real.
+4. `CaseActivity` (panel completo y estados).
+5. `SettingsActivity` (cuadro, importar, probar, borrar; quitar voz).
+6. `MainActivity` (título `CASE` botón, barras indicador, foco al volver).
+7. Documentación y `avance.md`.
+8. Compilar, firmar, probar en emulador API 22 y publicar.
+
+## Pruebas en emulador (API 22)
+
+- Sin configurar: el panel explica qué falta y lleva a Ajustes.
+- Pegar el bloque de PowerShell: guarda URL/token y muestra `••••1234`.
+- Importar desde `case.txt` en la carpeta de la app.
+- Probar con token inválido (`Token inválido`) y con token bueno (~18 s).
+- Panel: texto completo, saltos de línea, emojis (los nuevos como cuadro), scroll.
+- Respuesta tipo URL (servidor local): se muestra y `A abrir enlace` abre el navegador.
+- Cambiar la hora del emulador a 20:05 y reiniciar: una sola consulta de recuperación.
+- Modo avión: conserva el último reporte y lo marca desactualizado.
+- Foco: título `CASE` resaltado, A abre, B vuelve y el foco regresa al título.
+- Regresión: BTC, fecha, búsqueda, chip de actualización, engranaje, RSS, Agenda.
+
+## Riesgos anotados
+
+- `CASE` es más ancho que `NSP`: comprobar en 1280×720 y 1920×1080 que BTC y fecha no se
+  recorten; si pasa, reducir el título a 26sp o el margen izquierdo.
+- El `GET` de `googleusercontent` es de un solo uso: cualquier reintento lo invalida.
+- El APK no lleva credenciales; si se filtra el token, se rota en el script.
 
 ## Fuera de alcance en 1.6
 
@@ -196,7 +306,7 @@ mismas claves. Si falta URL o token: “Falta la URL o el token” y no se guard
 - Fuente de emojis empaquetada.
 - Cambios en RSS, Agenda, BTC, clima o actualizador (salvo los ajustes ya previstos).
 
-## Pendientes de confirmar
+## Detalles menores (se deciden al implementar)
 
 - Colores finales del indicador por estado.
 - Si el texto debe conservar el ancho completo o limitarse a ~900dp para lectura cómoda.

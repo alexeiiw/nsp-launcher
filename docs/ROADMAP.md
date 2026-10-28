@@ -53,7 +53,8 @@ Especificación completa en [`SPEC-CASE.md`](SPEC-CASE.md).
 - El título de la cabecera pasa de `NSP` a **`CASE`** y es el botón que abre el panel; las
   cuatro barras quedan solo como indicador de estado. El bloque de fecha no cambia.
 - La app sigue llamándose NSP (icono, lista de apps, Ajustes, APK).
-- El panel muestra **el mensaje completo**, sin parser, sin resumen y sin voz.
+- El panel muestra **el mensaje completo** o el enlace que devuelva, sin parser, sin
+  resumen y sin voz.
 - Se retiran el banner y la voz de la 1.5. El script no necesita `updated` ni `banner`.
 - URL y token se pegan en Ajustes (cuadro multilínea) o se importan de `Download/case.txt`;
   nunca van en el código, el APK ni el repo. Token enmascarado.
