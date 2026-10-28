@@ -18,6 +18,10 @@ local.properties
 *.iml
 .vscode/
 
+# Credenciales locales de CASE (nunca al repo)
+case.txt
+*.local
+
 # OS noise
 .DS_Store
 Thumbs.db

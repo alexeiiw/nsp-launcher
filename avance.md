@@ -60,6 +60,20 @@ Estado: **publicada** (28/10/2026).
 
 ## Fuera de 1.5
 
-- Webhook de CASE y banner → 1.6
+- Consulta CASE de texto completo → 1.6
+- Configuración de URL/token en Ajustes (cuadro multilínea e importar archivo) → 1.6
 - Ajustes del actualizador → 1.6
 - Prueba real de auto-actualización → día de la 1.6
+
+## Análisis 1.6 (cerrado, sin implementar)
+
+- 2026-10-28: se descarta el banner y la voz; CASE pasa a ser un panel con el mensaje
+  completo que devuelve el endpoint, sin parser.
+- Punto de entrada: el elemento CASE de la cabecera (cuatro barras) se convierte en botón;
+  el bloque de fecha no es botón.
+- URL y token nunca en el repo ni en el APK: se pegan en Ajustes o se importan de
+  `Download/case.txt`; se guardan en SharedPreferences y el token se muestra enmascarado.
+- Refresco 08:00/20:00 con una sola recuperación al arrancar; caché del último reporte.
+- Emojis sin filtrar; los que Android 5.1 no conoce se ven como cuadro (aceptado).
+- Detalle completo en `docs/SPEC-CASE.md`. La implementación empieza después de la prueba
+  de hardware de la 1.5.

@@ -1,7 +1,7 @@
 # Pendientes — NSP Launcher
 
 Estado actual: **1.5** publicado (28/10/2026); última instalación manual. **1.6** siguiente:
-webhook de CASE, banner y ajustes del actualizador.
+consulta CASE (texto completo), configuración de URL/token y ajustes del actualizador.
 
 ## 1.5 — publicado (28/10/2026)
 
@@ -44,18 +44,20 @@ sustituye Noticias.
 
 ## 1.6 — siguiente
 
-### Webhook de CASE (POST)
+### Consulta CASE (texto completo)
 
 El endpoint es un Apps Script con `doPost` que recibe `{canal, token, texto:"/hoy"}` y
-responde JSON; la app debe seguir el `302` hacia `googleusercontent` con un GET manual.
+responde JSON; la app sigue el `302` hacia `googleusercontent` con un GET manual.
+Especificación completa en [`SPEC-CASE.md`](SPEC-CASE.md).
 
-- Refresco programado a las **08:00 y 20:00**; caché local del último reporte.
-- `respuesta_plana` se muestra en el detalle; un resumen ocupa el banner.
-- Requiere añadir `updated` y `banner` al JSON del script.
-- Token exclusivo para la consola, guardado en SharedPreferences y enmascarado en Ajustes.
+- Botón CASE en la cabecera (las cuatro barras) abre el panel; el bloque de fecha no cambia.
+- El panel muestra **el mensaje completo**, sin parser, sin resumen y sin voz.
+- Se retiran el banner y la voz de la 1.5. El script no necesita `updated` ni `banner`.
+- URL y token se pegan en Ajustes (cuadro multilínea) o se importan de `Download/case.txt`;
+  nunca van en el código, el APK ni el repo. Token enmascarado.
+- Refresco a las **08:00 y 20:00** con recuperación al arrancar; caché del último reporte.
+- Emojis sin filtrar; en Android 5.1 los recientes salen como cuadro (aceptado).
 - Se descarta ETag: el endpoint es dinámico y la caché es por horario.
-- Banner de 28 dp bajo las filas del sistema, con compactado del bloque superior; SELECT abre
-  el detalle. Es la presencia visual de CASE.
 
 ### Ajustes del actualizador
 
