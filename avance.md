@@ -1,7 +1,7 @@
 # Avance — NSP Launcher 1.5
 
 Objetivo: `versionName 1.5`, `versionCode 11`. Última instalación manual.
-Estado: **pruebas finales en emulador**.
+Estado: **publicada** (28/10/2026).
 
 ## Bloques
 
@@ -13,8 +13,8 @@ Estado: **pruebas finales en emulador**.
 - [x] 6. Actualizador GitHub: consulta, descarga, firma, instalador
 - [x] 7. CASE: voz + LED en cabecera + overlay (A comprueba)
 - [x] 8. Búsqueda Google: overlay, teclado virtual, Chrome/Firefox
-- [ ] 9. Pruebas en emulador
-- [ ] 10. Documentación, build final, respaldo, Release
+- [x] 9. Pruebas en emulador
+- [x] 10. Documentación, build final, respaldo, Release
 
 ## Pruebas hechas (emulador API 22)
 
@@ -32,6 +32,10 @@ Estado: **pruebas finales en emulador**.
 - Incidencia corregida: el instalador de Android 5.1 no acepta `content://`
   (solo `file://`). El APK se guarda ahora en la carpeta externa de la app y se
   abre con `file://`; en Android 7+ se mantiene `content://`.
+- Instalación completa probada con APK 1.6 simulado: descarga, validación de firma y
+  `versionCode`, instalador del sistema y confirmación del usuario. Versión final 1.6/código 12.
+- Prueba contra la Release real: la 1.5 publicada responde «Al día» y no muestra chip.
+- Release `v1.5` publicada en GitHub con `NSPLauncher-1.5.apk` (174 391 bytes).
 
 ## Notas técnicas
 
@@ -51,6 +55,8 @@ Estado: **pruebas finales en emulador**.
 - 2026-10-28: pruebas de UI y RSS en emulador; corregido el arranque desplazado.
 - 2026-10-28: actualizador probado contra Release real y contra servidor local 1.6.
 - 2026-10-28: corregido el instalador para Android 5.1 (file://, carpeta externa).
+- 2026-10-28: arranque con SISTEMA visible y previa de Noticias desde el primer inicio.
+- 2026-10-28: Release v1.5 publicada; respaldo 1.4 guardado en `backups\`.
 
 ## Fuera de 1.5
 

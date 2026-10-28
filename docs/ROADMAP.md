@@ -1,9 +1,9 @@
 # Pendientes — NSP Launcher
 
-Estado actual: **1.4** publicado. **1.5** en desarrollo: será la última instalación manual y la
-primera versión con actualización automática.
+Estado actual: **1.5** publicado (28/10/2026); última instalación manual. **1.6** siguiente:
+webhook de CASE, banner y ajustes del actualizador.
 
-## 1.5 — en desarrollo
+## 1.5 — publicado (28/10/2026)
 
 Reparación de la 1.4, actualizador, CASE y búsqueda. Todo en un solo APK (`versionCode 11`).
 
@@ -20,7 +20,7 @@ Reparación de la 1.4, actualizador, CASE y búsqueda. Todo en un solo APK (`ver
 - Consulta `releases/latest` de GitHub una vez al día.
 - Compara versión numérica; descarga, valida paquete, firma y `versionCode`, y abre el instalador.
 - Android exige confirmación; sin root no hay instalación silenciosa.
-- Chip `⬆` en la cabecera y fila de diagnóstico en Ajustes.
+- Chip `↑` en la cabecera y fila de diagnóstico en Ajustes.
 - Raíces GTS (Google) y DigiCert/Amazon (GitHub) empaquetadas como reintento TLS.
 
 ### CASE (sin banner)
@@ -70,9 +70,12 @@ responde JSON; la app debe seguir el `302` hacia `googleusercontent` con un GET 
 Son cosas ya implementadas que solo se pueden confirmar en la consola; el emulador y esta PC
 no reproducen su pila TLS ni su teclado.
 
-- RSS: BBC Mundo, ESPN y Google News Guatemala/Fútbol.
-- Búsqueda: que el teclado en pantalla aparezca con el mando conectado.
-- Actualizador: primera verificación real cuando se publique la 1.6.
+- RSS: confirmar en la consola las cuatro categorías (BBC, ESPN, Google News
+  Guatemala/Fútbol); el emulador ya las mostró, pero su pila TLS es distinta.
+- Búsqueda: que el teclado en pantalla aparezca con el mando conectado y que Chrome o
+  Firefox reciban la consulta.
+- Actualizador: la primera verificación real de descarga e instalación ocurrirá cuando se
+  publique la 1.6. La consulta, descarga, firma e instalador ya se probaron en el emulador.
 - Apagar consola: verificado en hardware (27/10/2026).
 
 ## Ideas para cuando se quieran retomar
