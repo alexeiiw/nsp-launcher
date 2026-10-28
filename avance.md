@@ -69,8 +69,8 @@ Estado: **publicada** (28/10/2026).
 
 - 2026-10-28: se descarta el banner y la voz; CASE pasa a ser un panel con el mensaje
   completo que devuelve el endpoint, sin parser.
-- Punto de entrada: el elemento CASE de la cabecera (cuatro barras) se convierte en botón;
-  el bloque de fecha no es botón.
+- Punto de entrada: el título de la cabecera pasa de `NSP` a `CASE` y se convierte en
+  botón; las cuatro barras quedan solo como indicador. El bloque de fecha no es botón.
 - URL y token nunca en el repo ni en el APK: se pegan en Ajustes o se importan de
   `Download/case.txt`; se guardan en SharedPreferences y el token se muestra enmascarado.
 - Refresco 08:00/20:00 con una sola recuperación al arrancar; caché del último reporte.

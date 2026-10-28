@@ -50,7 +50,9 @@ El endpoint es un Apps Script con `doPost` que recibe `{canal, token, texto:"/ho
 responde JSON; la app sigue el `302` hacia `googleusercontent` con un GET manual.
 Especificación completa en [`SPEC-CASE.md`](SPEC-CASE.md).
 
-- Botón CASE en la cabecera (las cuatro barras) abre el panel; el bloque de fecha no cambia.
+- El título de la cabecera pasa de `NSP` a **`CASE`** y es el botón que abre el panel; las
+  cuatro barras quedan solo como indicador de estado. El bloque de fecha no cambia.
+- La app sigue llamándose NSP (icono, lista de apps, Ajustes, APK).
 - El panel muestra **el mensaje completo**, sin parser, sin resumen y sin voz.
 - Se retiran el banner y la voz de la 1.5. El script no necesita `updated` ni `banner`.
 - URL y token se pegan en Ajustes (cuadro multilínea) o se importan de `Download/case.txt`;

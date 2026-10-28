@@ -23,14 +23,15 @@ resumen, sin banner y sin voz.
 
 ## Punto de entrada
 
-- El elemento CASE que ya existe en la cabecera (las cuatro barras) pasa a ser el botón
-  que abre el panel. Sustituye al overlay de estado de la 1.5.
+- El título de la cabecera, hoy `NSP` (arriba a la izquierda, 28sp), pasa a decir **`CASE`**.
+- Ese título es el botón que abre el panel. Sustituye al overlay de estado de la 1.5.
+- Con mando: se resalta al enfocar (color de acento) y **A** lo abre; al volver, el foco
+  regresa a él.
+- Las cuatro barras de la derecha dejan de ser botón: quedan **solo** como indicador de
+  estado (ver “Estados del indicador”).
 - El bloque de fecha **no** es botón: se descartó esa opción.
-- Con mando: el botón entra en el recorrido normal de la cabecera, se resalta al enfocar
-  y **A** lo abre. Al volver del panel, el foco regresa a él.
-- Además de botón, las barras indican estado (ver “Estados del indicador”).
-- Pendiente de confirmar en el televisor: si además hay un rótulo CASE en el launcher del
-  sistema, debe abrir el mismo panel.
+- El nombre de la app no cambia: icono, lista de apps, Ajustes y APK siguen siendo **NSP**.
+  Solo cambia el título de la portada.
 
 ## Panel
 
@@ -169,18 +170,20 @@ mismas claves. Si falta URL o token: “Falta la URL o el token” y no se guard
 3. “Importar desde archivo” funciona con `Download/case.txt` sin teclado.
 4. “Probar” devuelve el texto completo en menos de 30 s y detecta token inválido.
 5. El panel muestra el mensaje íntegro, con saltos de línea y emojis, y hace scroll.
-6. El botón CASE de la cabecera abre el panel y el foco vuelve a él al salir.
-7. Reiniciar la app después de las 20:00 lanza una sola consulta de recuperación.
-8. Sin red, el panel conserva el último reporte y lo marca como desactualizado.
-9. `adb shell run-as` no es necesario para nada; el APK no contiene el token.
-10. `git grep` del repo no encuentra ni la URL ni el token.
+6. El título `CASE` de la cabecera abre el panel y el foco vuelve a él al salir.
+7. Las barras de la derecha cambian de color/segmentos según el estado y no abren nada.
+8. Reiniciar la app después de las 20:00 lanza una sola consulta de recuperación.
+9. Sin red, el panel conserva el último reporte y lo marca como desactualizado.
+10. `adb shell run-as` no es necesario para nada; el APK no contiene el token.
+11. `git grep` del repo no encuentra ni la URL ni el token.
 
 ## Archivos previstos
 
 - `CaseActivity.java`: reescritura como panel del reporte (se retira estado/voz).
 - `CaseService.java` (nuevo): POST, 302 manual, GET único, UTF-8, caché, slots.
 - `SettingsActivity.java`: bloque “Configuración CASE” con cuadro, importar, probar, borrar.
-- `MainActivity.java`: botón/estado de las barras; el bloque de fecha no cambia.
+- `MainActivity.java`: título `CASE` como botón; barras solo como indicador; el bloque de
+  fecha no cambia.
 - `strings.xml` / `AndroidManifest.xml`: etiquetas y textos.
 - `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `avance.md`: al implementar.
 
@@ -195,7 +198,5 @@ mismas claves. Si falta URL o token: “Falta la URL o el token” y no se guard
 
 ## Pendientes de confirmar
 
-- Elemento exacto del botón en el televisor: ¿las barras de la cabecera, un rótulo CASE
-  del launcher del sistema, o ambos?
 - Colores finales del indicador por estado.
 - Si el texto debe conservar el ancho completo o limitarse a ~900dp para lectura cómoda.
