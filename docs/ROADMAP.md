@@ -23,11 +23,11 @@ Reparación de la 1.4, actualizador, CASE y búsqueda. Todo en un solo APK (`ver
 - Chip `⬆` en la cabecera y fila de diagnóstico en Ajustes.
 - Raíces GTS (Google) y DigiCert/Amazon (GitHub) empaquetadas como reintento TLS.
 
-### CASE
+### CASE (sin banner)
 
 - Voz en los textos del sistema e interruptor `CASE / neutral` en Ajustes.
-- Banner de una línea, 28 dp, debajo de las dos filas del sistema.
-- SELECT abre el detalle; se compacta el bloque superior para no quitar espacio a Recientes.
+- El banner de una línea y su presencia visual pasan a la 1.6, junto con el webhook.
+- Sin banner no se toca el layout: Recientes conserva el espacio actual.
 
 ### Búsqueda de Google
 
@@ -54,6 +54,8 @@ responde JSON; la app debe seguir el `302` hacia `googleusercontent` con un GET 
 - Requiere añadir `updated` y `banner` al JSON del script.
 - Token exclusivo para la consola, guardado en SharedPreferences y enmascarado en Ajustes.
 - Se descarta ETag: el endpoint es dinámico y la caché es por horario.
+- Banner de 28 dp bajo las filas del sistema, con compactado del bloque superior; SELECT abre
+  el detalle. Es la presencia visual de CASE.
 
 ### Ajustes del actualizador
 
@@ -63,9 +65,13 @@ responde JSON; la app debe seguir el `302` hacia `googleusercontent` con un GET 
 - Buscar ahora.
 - Borrar el APK descargado.
 
-## Pendiente de hardware
+## Verificación en hardware (no es desarrollo pendiente)
 
-- Probar RSS en la consola real: BBC Mundo, ESPN y Google News Guatemala/Fútbol.
+Son cosas ya implementadas que solo se pueden confirmar en la consola; el emulador y esta PC
+no reproducen su pila TLS ni su teclado.
+
+- RSS: BBC Mundo, ESPN y Google News Guatemala/Fútbol.
+- Búsqueda: que el teclado en pantalla aparezca con el mando conectado.
 - Actualizador: primera verificación real cuando se publique la 1.6.
 - Apagar consola: verificado en hardware (27/10/2026).
 
