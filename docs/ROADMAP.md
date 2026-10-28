@@ -50,14 +50,16 @@ El endpoint es un Apps Script con `doPost` que recibe `{canal, token, texto:"/ho
 responde JSON; la app sigue el `302` hacia `googleusercontent` con un GET manual.
 Especificación completa en [`SPEC-CASE.md`](SPEC-CASE.md).
 
-- El título de la cabecera pasa de `NSP` a **`CASE`** y es el botón que abre el panel; las
-  cuatro barras quedan solo como indicador de estado. El bloque de fecha no cambia.
+- La cabecera izquierda pasa a ser `▮▮▮▮ CASE`: el logo de barras se mueve junto al título
+  y el conjunto es el botón que abre el panel. La derecha queda BTC, fecha, búsqueda, chip y
+  engranaje. El bloque de fecha no cambia.
 - La app sigue llamándose NSP (icono, lista de apps, Ajustes, APK).
 - El panel muestra **el mensaje completo** o el enlace que devuelva, sin parser, sin
   resumen y sin voz.
 - Se retiran el banner y la voz de la 1.5. El script no necesita `updated` ni `banner`.
-- URL y token se pegan en Ajustes (cuadro multilínea) o se importan de `Download/case.txt`;
-  nunca van en el código, el APK ni el repo. Token enmascarado.
+- En Ajustes se quitan las filas `Personalidad` y `Abrir CASE`; en su lugar va el cuadro
+  multilínea (o `Download/case.txt`) para pegar URL y token. Nunca van en el código, el APK
+  ni el repo. Token enmascarado.
 - Refresco a las **08:00 y 20:00** con recuperación al arrancar; caché del último reporte.
 - Emojis sin filtrar; en Android 5.1 los recientes salen como cuadro (aceptado).
 - Se descarta ETag: el endpoint es dinámico y la caché es por horario.
@@ -75,12 +77,11 @@ Especificación completa en [`SPEC-CASE.md`](SPEC-CASE.md).
 Son cosas ya implementadas que solo se pueden confirmar en la consola; el emulador y esta PC
 no reproducen su pila TLS ni su teclado.
 
-- RSS: confirmar en la consola las cuatro categorías (BBC, ESPN, Google News
-  Guatemala/Fútbol); el emulador ya las mostró, pero su pila TLS es distinta.
-- Búsqueda: que el teclado en pantalla aparezca con el mando conectado y que Chrome o
-  Firefox reciban la consulta.
-- Actualizador: la primera verificación real de descarga e instalación ocurrirá cuando se
-  publique la 1.6. La consulta, descarga, firma e instalador ya se probaron en el emulador.
+- RSS: **verificado** en la consola (28/10/2026), cuatro categorías.
+- Búsqueda: **verificada** en la consola (28/10/2026), con mando.
+- Agenda: **verificada** en la consola (28/10/2026).
+- Actualizador: la consulta funciona (dijo “última versión” el 28/10/2026). La primera
+  descarga e instalación real ocurrirá cuando se publique la 1.6.
 - Apagar consola: verificado en hardware (27/10/2026).
 
 ## Ideas para cuando se quieran retomar

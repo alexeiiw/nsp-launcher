@@ -28,11 +28,14 @@ cual llega: sin parser, sin resumen, sin banner y sin voz.
 ## Punto de entrada
 
 - El título de la cabecera, hoy `NSP` (arriba a la izquierda, 28sp), pasa a decir **`CASE`**.
-- Ese título es el botón que abre el panel. Sustituye al overlay de estado de la 1.5.
-- Con mando: se resalta al enfocar (color de acento) y **A** lo abre; al volver, el foco
-  regresa a él.
-- Las cuatro barras de la derecha dejan de ser botón: quedan **solo** como indicador de
-  estado (ver “Estados del indicador”).
+- El logo de barras que hoy está arriba a la derecha se mueve **junto al título**, a su
+  derecha: `▮▮▮▮ CASE` en el extremo izquierdo de la cabecera.
+- El conjunto **barras + título** es un solo botón que abre el panel. Sustituye al overlay
+  de estado de la 1.5.
+- Con mando: el grupo se resalta al enfocar (color de acento) y **A** lo abre; al volver, el
+  foco regresa a él.
+- La cabecera derecha queda: BTC, fecha/hora, búsqueda, chip de actualización y engranaje.
+- Las barras siguen funcionando como indicador de estado (ver “Estados del indicador”).
 - El bloque de fecha **no** es botón: se descartó esa opción.
 - El nombre de la app no cambia: icono, lista de apps, Ajustes y APK siguen siendo **NSP**.
   Solo cambia el título de la portada.
@@ -76,7 +79,8 @@ cual llega: sin parser, sin resumen, sin banner y sin voz.
 
 ## Ajustes — Configuración CASE
 
-Bloque nuevo en Ajustes, debajo del actualizador:
+Se **eliminan** las dos filas actuales de CASE en Ajustes: `Personalidad` (voz CASE/neutral)
+y `Abrir CASE`. En su lugar va un solo bloque, debajo del actualizador:
 
 - **Cuadro multilínea** (8–10 líneas visibles) para pegar el bloque completo.
 - **Importar desde archivo**: lee `Download/case.txt` y, si no existe, `case.txt` en la
@@ -153,13 +157,15 @@ mismas claves. Si falta URL o token: “Falta la URL o el token” y no se guard
   subconjunto de NotoColorEmoji.
 - UTF-8 de extremo a extremo; nunca `\uFFFD` ni `ISO-8859-1`.
 
-## Estados del indicador (barras de la cabecera)
+## Estados del indicador (barras junto al título)
 
 - 4 barras azules: reporte del slot actual, correcto.
 - 2 barras: desactualizado (se perdió un slot o falló la red).
 - 1 barra ámbar/roja: error repetido o configuración inválida.
 - 0 barras: sin configurar.
 - Los colores exactos se ajustan al tema claro/oscuro durante la implementación.
+- Pendiente de confirmar: el logo actual tiene **4** barras; el usuario habló de “3”. Se
+  deja en 4 salvo indicación contraria.
 
 ## Seguridad
 
@@ -198,15 +204,15 @@ mismas claves. Si falta URL o token: “Falta la URL o el token” y no se guard
 
 - Línea ~339: `title.setText("NSP")` → `title.setText("CASE")`; se mantiene 28sp y la
   tipografía fina. Añadir `padding` interno para que el resaltado del foco no se recorte.
-- Guardar la referencia (`homeTitle`) y registrarla como **primer** elemento:
-  `headerItems.add(0, homeTitle)`.
-- `updateHeaderSelection()`: hoy solo escala; el título no debe escalar (movería el
-  header). Caso especial: si `v == homeTitle`, cambiar el color al azul de acento cuando
-  está seleccionado y volver al color normal al salir; el resto sigue con la escala 1.12.
-- `openHeaderItem()`: añadir la rama `v == homeTitle → openCase()`.
-- `buildCaseMark()`: quitar `setOnClickListener` y **no** añadirlo a `headerItems`; las
-  barras dejan de ser botón y dejan de detener el recorrido. Quitar su rama de
-  `openHeaderItem()`.
+- Mover `CaseView` de `headerRight` al grupo izquierdo, inmediatamente a la derecha del
+  título, dentro de un `LinearLayout` contenedor. Ese contenedor es el botón: `CASE` + barras.
+- El contenedor se registra como **primer** elemento: `headerItems.add(0, caseButton)`.
+- Dejar de añadir `caseMark` a `headerItems` (ya no es un elemento de navegación aparte).
+- `updateHeaderSelection()`: el grupo no escala (movería el header); si es el seleccionado,
+  cambia el color del título y realza las barras; si no, vuelve al color normal.
+- `openHeaderItem()`: rama `v == caseButton → openCase()`; quitar la rama de `caseMark`.
+- `buildCaseMark()` deja de recibir `headerRight`; pasa a construir el grupo izquierdo y su
+  `OnClickListener`.
 - `openCase()` se conserva igual: `startActivity(new Intent(this, CaseActivity.class))`.
 - Al volver del panel (si se abrió desde el título), devolver el foco al título:
   `headerFocus = true; headerPos = 0; updateHeaderSelection();` en `onResume`, solo si se
@@ -253,7 +259,8 @@ mismas claves. Si falta URL o token: “Falta la URL o el token” y no se guard
   `Download/case.txt` (`Environment.getExternalStoragePublicDirectory`, requiere
   `READ_EXTERNAL_STORAGE`; en API 22 es permiso de instalación, en 23+ hay que pedirlo).
 - Al guardar: parsea, valida, guarda, limpia el cuadro y muestra el token enmascarado.
-- Se elimina la fila del interruptor de voz `CASE / neutral` y su código.
+- Se eliminan la fila del interruptor de voz `CASE / neutral`, su `case_voice` y la fila
+  `Abrir CASE` con su `Intent` a `CaseActivity`.
 
 ### `AndroidManifest.xml` / `strings.xml`
 

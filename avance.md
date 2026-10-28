@@ -70,11 +70,23 @@ Estado: **publicada** (28/10/2026).
 - 2026-10-28: se descarta el banner y la voz; CASE pasa a ser un panel con el mensaje
   completo (o el enlace) que devuelve el endpoint, sin parser. En documentación se llama
   “Módulo CASE”, una funcionalidad adicional del APK.
-- Punto de entrada: el título de la cabecera pasa de `NSP` a `CASE` y se convierte en
-  botón; las cuatro barras quedan solo como indicador. El bloque de fecha no es botón.
+- Punto de entrada: la cabecera izquierda queda `▮▮▮▮ CASE`; el logo de barras se mueve
+  junto al título y el conjunto es el botón que abre el panel. Las barras siguen indicando
+  estado; el bloque de fecha no es botón.
+- En Ajustes se quitan las filas `Personalidad` y `Abrir CASE`; el cuadro multilínea ocupa
+  su lugar.
 - URL y token nunca en el repo ni en el APK: se pegan en Ajustes o se importan de
   `Download/case.txt`; se guardan en SharedPreferences y el token se muestra enmascarado.
 - Refresco 08:00/20:00 con una sola recuperación al arrancar; caché del último reporte.
 - Emojis sin filtrar; los que Android 5.1 no conoce se ven como cuadro (aceptado).
-- Detalle completo en `docs/SPEC-CASE.md`. La implementación empieza después de la prueba
-  de hardware de la 1.5.
+- Detalle completo en `docs/SPEC-CASE.md`.
+
+## Pruebas de hardware 1.5 (2026-10-28)
+
+- Búsqueda de Google: correcta con el mando.
+- Agenda: correcta.
+- RSS: correcto (las cuatro categorías).
+- Actualizador: consultó y respondió que ya estaba la última versión.
+- El logo de barras de CASE gustó; se traslada junto al título en la 1.6.
+- Queda pendiente la instalación real de una actualización, que solo se prueba al
+  publicar la 1.6.
