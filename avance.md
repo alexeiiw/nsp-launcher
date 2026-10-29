@@ -2,7 +2,7 @@
 
 Objetivo: `versionName 1.6`, `versionCode 12`. Primera versión pensada para llegar por el
 actualizador (la 1.5 fue la última instalación manual).
-Estado: **implementada y probada en emulador** (29/10/2026); pendiente de publicar.
+Estado: **publicada** (29/10/2026): Release `v1.6` en GitHub con el APK firmado.
 
 ## Bloques
 
@@ -17,7 +17,7 @@ Estado: **implementada y probada en emulador** (29/10/2026); pendiente de public
 - [x] 5. `READ_EXTERNAL_STORAGE` y manifiesto al día.
 - [x] 6. Documentación (CHANGELOG, README, ROADMAP, VERSIONING, avance).
 - [x] 7. Compilar, firmar con la misma clave y respaldar la 1.5.
-- [ ] 8. Publicar la Release `v1.6` y probar la actualización real desde la consola.
+- [x] 8. Publicar la Release `v1.6` y comprobar el actualizador contra ella.
 
 ## Pruebas hechas (emulador API 22)
 
@@ -40,6 +40,8 @@ Estado: **implementada y probada en emulador** (29/10/2026); pendiente de public
   navegador del sistema en `https://example.com/informe?id=42`.
 - Sin regresiones: BTC, fecha, reloj, búsqueda, chip de actualización, engranaje, RSS, Agenda
   y Avisos siguen funcionando.
+- Actualizador real contra la Release recién publicada: consultó `releases/latest` (v1.6) y
+  respondió «Al día · 29 oct. 10:42», sin chip `↑` en la cabecera.
 
 ## Notas técnicas
 
@@ -65,10 +67,12 @@ Estado: **implementada y probada en emulador** (29/10/2026); pendiente de public
 - 2026-10-29: pruebas de panel, estados, enlace, importación y recuperación al arrancar.
 - 2026-10-29: endpoint validado con el token correcto; reporte real visible en la consola
   emulada.
+- 2026-10-29: Release `v1.6` publicada con `NSPLauncher-1.6.apk` (182 583 bytes, SHA-256
+  `EAAEFAB1…4A2A5F`); el actualizador de la app consultó GitHub y respondió «Al día».
 
 ## Fuera de 1.6
 
 - Ajustes del actualizador (activar, frecuencia, canal, buscar ahora, borrar APK) → 1.7.
 - Prueba de importación en hardware: el AVD no trae almacenamiento externo; se validó
   montando un `tmpfs` en `/storage/sdcard`.
-- Instalación real de la actualización, que solo se puede probar al publicar la 1.6.
+- Instalación real de una actualización: se podrá probar cuando se publique la 1.7.

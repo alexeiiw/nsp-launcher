@@ -1,8 +1,8 @@
 # Pendientes — NSP Launcher
 
-Estado actual: **1.6** implementado y probado en emulador (29/10/2026), pendiente de publicar.
-Incluye la consulta CASE (texto completo), la configuración de URL/token y la retirada de la
-voz. Los ajustes del actualizador pasan a la 1.7.
+Estado actual: **1.6** publicado (29/10/2026) con la Release `v1.6`. Incluye la consulta CASE
+(texto completo), la configuración de URL/token y la retirada de la voz. Los ajustes del
+actualizador pasan a la 1.7.
 
 ## 1.5 — publicado (28/10/2026)
 
@@ -43,7 +43,7 @@ Agenda, Noticias o Recientes. Al pulsarla abre un overlay a pantalla completa co
 Con mando sin teclado físico escribir será lento; por eso queda como acceso opcional, no
 sustituye Noticias.
 
-## 1.6 — implementado (29/10/2026)
+## 1.6 — publicado (29/10/2026)
 
 ### Consulta CASE (texto completo)
 
