@@ -2,30 +2,42 @@ package com.nsp.launcher;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.text.InputType;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -45,10 +57,15 @@ public class SettingsActivity extends Activity {
     private TextView notificationValue;
     private TextView backgroundValue;
     private TextView clockValue;
-    private TextView caseValue;
+    private TextView caseStatus;
+    private EditText caseInput;
+    private LinearLayout caseSaveRow;
     private TextView updateValue;
 
+    private boolean caseTesting;
+
     private static final int REQ_PICK_IMAGE = 1001;
+    private static final int REQ_STORAGE = 1002;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -195,17 +212,66 @@ public class SettingsActivity extends Activity {
         });
 
         addLabel(content, "CASE");
-        caseValue = addRow(content, "Personalidad", "", new Runnable() {
+
+        TextView caseHint = new TextView(this);
+        caseHint.setText("Pega el bloque del script (URL y token) o importa case.txt. "
+                + "La URL y el token se guardan solo en este aparato.");
+        caseHint.setTextSize(9);
+        caseHint.setTextColor(isLight ? 0xFF666666 : 0xFF9E9E9E);
+        caseHint.setPadding(dp(24), dp(2), dp(24), dp(6));
+        content.addView(caseHint, new LinearLayout.LayoutParams(-1, -2));
+
+        caseInput = new EditText(this);
+        caseInput.setHint("$url = \"https://script.google.com/…\"\n$token = \"…\"");
+        caseInput.setSingleLine(false);
+        caseInput.setInputType(InputType.TYPE_CLASS_TEXT
+                | InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        caseInput.setMinLines(5);
+        caseInput.setMaxLines(8);
+        caseInput.setGravity(Gravity.TOP | Gravity.START);
+        caseInput.setTextSize(12);
+        caseInput.setTypeface(Typeface.MONOSPACE);
+        caseInput.setTextColor(isLight ? 0xFF111111 : 0xFFFFFFFF);
+        caseInput.setHintTextColor(isLight ? 0xFF999999 : 0xFF666666);
+        GradientDrawable box = flat(isLight ? 0xFFF4F4F4 : 0xFF101010);
+        box.setStroke(dp(1), isLight ? 0xFFCCCCCC : 0xFF333333);
+        box.setCornerRadius(dp(4));
+        caseInput.setBackgroundDrawable(box);
+        caseInput.setPadding(dp(12), dp(10), dp(12), dp(10));
+        LinearLayout.LayoutParams boxParams = new LinearLayout.LayoutParams(-1, -2);
+        boxParams.leftMargin = dp(24);
+        boxParams.rightMargin = dp(24);
+        content.addView(caseInput, boxParams);
+
+        caseStatus = new TextView(this);
+        caseStatus.setTextSize(9);
+        caseStatus.setTextColor(isLight ? 0xFF666666 : 0xFF9E9E9E);
+        caseStatus.setPadding(dp(24), dp(4), dp(24), dp(4));
+        content.addView(caseStatus, new LinearLayout.LayoutParams(-1, -2));
+
+        TextView saveValue = addRow(content, "Guardar CASE", "", new Runnable() {
             public void run() {
-                boolean on = !prefs.getBoolean("case_voice", true);
-                prefs.edit().putBoolean("case_voice", on).apply();
-                updateValues();
+                saveCase();
+            }
+        });
+        caseSaveRow = (LinearLayout) saveValue.getParent();
+
+        addRow(content, "Importar desde archivo", "case.txt", new Runnable() {
+            public void run() {
+                importCase();
             }
         });
 
-        addRow(content, "Abrir CASE", "Ahora", new Runnable() {
+        addRow(content, "Probar CASE", "Ahora", new Runnable() {
             public void run() {
-                startActivity(new Intent(SettingsActivity.this, CaseActivity.class));
+                testCase();
+            }
+        });
+
+        addRow(content, "Borrar configuración", "", new Runnable() {
+            public void run() {
+                confirmClearCase();
             }
         });
 
@@ -357,11 +423,184 @@ public class SettingsActivity extends Activity {
                 homeValue.setText("Desactivado");
             }
         }
-        if (caseValue != null) {
-            caseValue.setText(prefs.getBoolean("case_voice", true) ? "CASE" : "Neutral");
+        if (caseStatus != null) {
+            if (!CaseService.isConfigured(this)) {
+                caseStatus.setText("Sin configurar");
+            } else {
+                String line = CaseService.host(this) + " · token "
+                        + CaseService.maskedToken(this) + " · " + CaseService.stamp(this);
+                String error = CaseService.cachedError(this);
+                if (error != null && error.length() > 0) {
+                    line = line + " · " + error;
+                }
+                caseStatus.setText(line);
+            }
         }
         if (updateValue != null) {
             updateValue.setText(UpdateService.statusText(this));
+        }
+    }
+
+    private void saveCase() {
+        CaseService.ParseResult result = CaseService.parse(caseInput.getText().toString());
+        if (result.error != null) {
+            toast(result.error);
+            return;
+        }
+        CaseService.save(this, result.config);
+        caseInput.setText("");
+        updateValues();
+        toast("CASE guardado");
+    }
+
+    private void testCase() {
+        if (caseTesting) return;
+        String raw = caseInput.getText().toString().trim();
+        CaseService.Config config;
+        if (raw.length() == 0) {
+            config = CaseService.load(this);
+            if (!config.complete()) {
+                toast("Pega la URL y el token, o importa case.txt");
+                return;
+            }
+        } else {
+            CaseService.ParseResult result = CaseService.parse(raw);
+            if (result.error != null) {
+                toast(result.error);
+                return;
+            }
+            config = result.config;
+        }
+
+        caseTesting = true;
+        caseStatus.setText("Consultando… puede tardar unos 20 s");
+        CaseService.test(this, config, new CaseService.Callback() {
+            public void onResult(String text, String error) {
+                caseTesting = false;
+                updateValues();
+                if (error != null) {
+                    toast("Error: " + error);
+                } else {
+                    toast("CASE respondió · " + text.length() + " caracteres");
+                }
+            }
+        });
+    }
+
+    private void importCase() {
+        File appFile = new File(getExternalFilesDir(null), "case.txt");
+        String text = readCaseFile(appFile);
+        if (text == null) {
+            if (!canReadStorage()) {
+                if (Build.VERSION.SDK_INT >= 23) {
+                    requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                            REQ_STORAGE);
+                }
+                return;
+            }
+            File downloads = new File(Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_DOWNLOADS), "case.txt");
+            text = readCaseFile(downloads);
+        }
+        if (text == null) {
+            toast("No se encontró case.txt en Descargas ni en la carpeta de NSP");
+            return;
+        }
+        caseInput.setText(text);
+        caseInput.setSelection(caseInput.getText().length());
+        toast("Archivo importado; pulsa Guardar CASE");
+    }
+
+    private boolean canReadStorage() {
+        if (Build.VERSION.SDK_INT < 23) return true;
+        return checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private String readCaseFile(File file) {
+        if (file == null || !file.isFile()) return null;
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(
+                    new FileInputStream(file), StandardCharsets.UTF_8));
+            StringBuilder builder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) builder.append(line).append('\n');
+            String text = builder.toString().trim();
+            if (text.startsWith("\uFEFF")) text = text.substring(1);
+            return text.length() == 0 ? null : text;
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
+    private void confirmClearCase() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Borrar configuración CASE");
+        builder.setMessage("Se quitarán la URL, el token y el último reporte de este aparato.");
+        builder.setPositiveButton("Borrar", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                CaseService.clear(SettingsActivity.this);
+                caseInput.setText("");
+                updateValues();
+                toast("Configuración CASE borrada");
+            }
+        });
+        builder.setNegativeButton("Cancelar", null);
+
+        AlertDialog dialog = builder.create();
+        dialogOpen = true;
+        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            public void onDismiss(DialogInterface d) {
+                dialogOpen = false;
+            }
+        });
+        dialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
+            public boolean onKey(DialogInterface d, int keyCode, KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_BUTTON_B
+                        && event.getAction() == KeyEvent.ACTION_DOWN) {
+                    d.dismiss();
+                    return true;
+                }
+                return false;
+            }
+        });
+        dialog.show();
+    }
+
+    private void showKeyboard() {
+        caseInput.requestFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.showSoftInput(caseInput, InputMethodManager.SHOW_IMPLICIT);
+        }
+    }
+
+    private void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(caseInput.getWindowToken(), 0);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                           int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != REQ_STORAGE) return;
+        boolean granted = grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+        if (granted) {
+            importCase();
+        } else {
+            toast("Sin permiso no se puede leer Descargas");
         }
     }
 
@@ -698,11 +937,29 @@ public class SettingsActivity extends Activity {
 
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             int code = event.getKeyCode();
+            View focused = getCurrentFocus();
+            if (focused == caseInput) {
+                if (code == KeyEvent.KEYCODE_ENTER || code == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+                    return super.dispatchKeyEvent(event);
+                }
+                if (code == KeyEvent.KEYCODE_BUTTON_A
+                        || code == KeyEvent.KEYCODE_DPAD_CENTER) {
+                    showKeyboard();
+                    return true;
+                }
+                if (code == KeyEvent.KEYCODE_BUTTON_B) {
+                    hideKeyboard();
+                    return true;
+                }
+                if (code == KeyEvent.KEYCODE_DPAD_DOWN && caseSaveRow != null) {
+                    caseSaveRow.requestFocus();
+                    return true;
+                }
+            }
             if (code == KeyEvent.KEYCODE_BUTTON_A
                     || code == KeyEvent.KEYCODE_DPAD_CENTER
                     || code == KeyEvent.KEYCODE_ENTER) {
                 if (event.getRepeatCount() == 0) {
-                    View focused = getCurrentFocus();
                     if (focused != null) focused.performClick();
                 }
                 return true;

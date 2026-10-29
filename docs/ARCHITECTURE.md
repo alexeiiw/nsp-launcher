@@ -249,7 +249,8 @@ Ver [BUILD.md](BUILD.md). Sin Gradle: `aapt2` → `javac` → `d8` → `jar` →
 - `minSdk 22`, `targetSdk 28`, compilado con `compileSdk 31`.
 - API usadas: `getExternalFilesDirs` (19), `setLetterSpacing` (21), `Theme.Material` (21),
   `ImmersiveSticky` (19), `AppWidgetHost` no usado.
-- Sin permisos de almacenamiento, ubicación ni servicios de Google.
+- Sin permisos de ubicación ni servicios de Google; `READ_EXTERNAL_STORAGE` solo para
+  importar `case.txt`.
 
 ## 1.4
 - Sistema se distribuye en dos filas y Noticias abre NewsActivity/RssService.
@@ -262,3 +263,24 @@ Ver [BUILD.md](BUILD.md). Sin Gradle: `aapt2` → `javac` → `d8` → `jar` →
 - SearchActivity: overlay con teclado virtual, historial de cinco busquedas y Chrome/Firefox.
 - CaseActivity y CaseView: LED de cuatro segmentos, estado del sistema y voz CASE.
 - Ajustes muestra version, estado de actualizacion e interruptor CASE/neutral.
+
+## 1.6 — modulo CASE
+
+- Cabecera: `CaseView` (4 barras) + titulo `CASE` dentro de un `LinearLayout` que es el
+  boton; sustituye al titulo `NSP` y al `CaseView` suelto de la derecha. Se registra como
+  primer elemento de `headerItems`, sin escalar al enfocar (solo cambia el color del titulo).
+- `MainActivity`: las barras se repintan con `CaseService.indicator()` en `onResume`, al
+  cerrar el panel y con un tic de un minuto; ese tic tambien llama a
+  `CaseService.refreshIfDue()` (una sola consulta de recuperacion al arrancar).
+- `CaseService`: configuracion en `SharedPreferences("nsp")`; POST JSON sin redireccion
+  automatica, un unico GET manual al destino de un solo uso, UTF-8 y reintento TLS con
+  `TrustedRoots`. Decide slots 08:00/20:00, guarda el ultimo reporte bueno y expone el estado
+  del indicador (4 al dia, 2 desactualizado, 1 error, 0 sin configurar).
+- `CaseActivity`: panel a pantalla completa con el texto integro en un `ScrollView`; A
+  actualiza, X abre la primera URL con `BrowserUtil`, B vuelve. Solo vuelve arriba cuando el
+  texto cambia.
+- `SettingsActivity`: bloque CASE con cuadro multilinea, importacion de `case.txt`
+  (`Download` o carpeta externa de la app), Guardar / Probar / Borrar y linea de estado con
+  el token enmascarado. Se eliminan la voz y el interruptor CASE/neutral.
+- La URL y el token no estan en el codigo ni en el APK: se guardan solo en el aparato.
+- `READ_EXTERNAL_STORAGE` solo para leer `case.txt` al importar la configuracion.

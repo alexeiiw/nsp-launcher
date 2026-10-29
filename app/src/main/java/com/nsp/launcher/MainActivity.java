@@ -99,6 +99,20 @@ public class MainActivity extends Activity {
     private boolean newsLoading;
     private ImageView searchIcon;
     private CaseView caseMark;
+    private LinearLayout caseButton;
+    private TextView homeTitle;
+    private boolean focusCaseOnResume;
+    private final Runnable caseTicker = new Runnable() {
+        public void run() {
+            refreshCaseIndicator();
+            CaseService.refreshIfDue(MainActivity.this, new CaseService.Callback() {
+                public void onResult(String text, String error) {
+                    refreshCaseIndicator();
+                }
+            });
+            ui.postDelayed(this, 60L * 1000L);
+        }
+    };
     private TextView updateChip;
     private String updateVersion;
     private boolean updateChecking;
@@ -335,21 +349,14 @@ public class MainActivity extends Activity {
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setPadding(dp(24), dp(6), dp(24), dp(6));
 
-        TextView title = new TextView(this);
-        title.setText("NSP");
-        title.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
-        title.setTextSize(28);
-        title.setLetterSpacing(0.04f);
-        title.setTextColor(textColor());
-        title.setSingleLine(true);
-        header.addView(title, new LinearLayout.LayoutParams(0, -2, 1f));
+        headerItems.clear();
+        headerFocus = false;
+        buildCaseButton(header);
 
         LinearLayout headerRight = new LinearLayout(this);
         headerRight.setOrientation(LinearLayout.HORIZONTAL);
         headerRight.setGravity(Gravity.CENTER_VERTICAL);
 
-        headerItems.clear();
-        headerFocus = false;
         buildBtcChip(headerRight);
 
         if (clockStyle == 2) {
@@ -418,8 +425,9 @@ public class MainActivity extends Activity {
         buildSearchButton(headerRight);
         buildUpdateChip(headerRight);
         buildSettingsGear(headerRight);
-        buildCaseMark(headerRight);
 
+        View spacer = new View(this);
+        header.addView(spacer, new LinearLayout.LayoutParams(0, 1, 1f));
         header.addView(headerRight, new LinearLayout.LayoutParams(-2, -2));
 
         page.addView(header, new LinearLayout.LayoutParams(-1, -2));
@@ -1283,18 +1291,47 @@ public class MainActivity extends Activity {
         });
     }
 
-    private void buildCaseMark(LinearLayout headerRight) {
+    private void buildCaseButton(LinearLayout header) {
+        caseButton = new LinearLayout(this);
+        caseButton.setOrientation(LinearLayout.HORIZONTAL);
+        caseButton.setGravity(Gravity.CENTER_VERTICAL);
+        caseButton.setFocusable(true);
+        caseButton.setFocusableInTouchMode(true);
+        caseButton.setClickable(true);
+        caseButton.setPadding(dp(4), dp(2), dp(8), dp(2));
+
         caseMark = new CaseView(this);
         caseMark.setColors(isLight ? 0xFF0050EF : 0xFF1BA1E2, 0x33FFFFFF);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(16), dp(22));
-        params.leftMargin = dp(10);
-        headerRight.addView(caseMark, params);
-        headerItems.add(caseMark);
-        caseMark.setOnClickListener(new View.OnClickListener() {
+        caseButton.addView(caseMark, new LinearLayout.LayoutParams(dp(16), dp(22)));
+
+        homeTitle = new TextView(this);
+        homeTitle.setText("CASE");
+        homeTitle.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+        homeTitle.setTextSize(28);
+        homeTitle.setLetterSpacing(0.04f);
+        homeTitle.setTextColor(textColor());
+        homeTitle.setSingleLine(true);
+        LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(-2, -2);
+        titleParams.leftMargin = dp(10);
+        caseButton.addView(homeTitle, titleParams);
+
+        header.addView(caseButton, new LinearLayout.LayoutParams(-2, -2));
+        headerItems.add(caseButton);
+
+        caseButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 openCase();
             }
         });
+        refreshCaseIndicator();
+    }
+
+    private void refreshCaseIndicator() {
+        if (caseMark == null) return;
+        int level = CaseService.indicator(this);
+        caseMark.setLit(level);
+        int on = level == 1 ? 0xFFFF5252 : (isLight ? 0xFF0050EF : 0xFF1BA1E2);
+        caseMark.setColors(on, 0x33FFFFFF);
     }
 
     private void buildUpdateChip(LinearLayout headerRight) {
@@ -1324,6 +1361,7 @@ public class MainActivity extends Activity {
     private void openCase() {
         headerFocus = false;
         updateHeaderSelection();
+        focusCaseOnResume = true;
         startActivity(new Intent(this, CaseActivity.class));
     }
 
@@ -1379,7 +1417,7 @@ public class MainActivity extends Activity {
             openSettings();
         } else if (v == searchIcon) {
             openSearch();
-        } else if (v == caseMark) {
+        } else if (v == caseButton) {
             openCase();
         } else if (v == updateChip) {
             checkUpdates(true);
@@ -1391,6 +1429,13 @@ public class MainActivity extends Activity {
         for (int i = 0; i < headerItems.size(); i++) {
             View v = headerItems.get(i);
             boolean selected = headerFocus && i == headerPos;
+            if (v == caseButton) {
+                if (homeTitle != null) {
+                    homeTitle.setTextColor(selected
+                            ? (isLight ? 0xFF0050EF : 0xFF1BA1E2) : textColor());
+                }
+                continue;
+            }
             v.animate().scaleX(selected ? 1.12f : 1f)
                     .scaleY(selected ? 1.12f : 1f)
                     .setDuration(90).start();
@@ -2475,11 +2520,22 @@ public class MainActivity extends Activity {
 
         maybeRefreshWeather();
         registerPackageReceiver();
+
+        refreshCaseIndicator();
+        if (focusCaseOnResume) {
+            focusCaseOnResume = false;
+            headerFocus = true;
+            headerPos = 0;
+            updateHeaderSelection();
+        }
+        ui.removeCallbacks(caseTicker);
+        ui.post(caseTicker);
     }
 
     @Override
     protected void onPause() {
         resumed = false;
+        ui.removeCallbacks(caseTicker);
         NotificationStore.removeListener(badgeListener);
         if (headerClock != null) headerClock.setRunning(false);
         if (batteryReceiver != null) {

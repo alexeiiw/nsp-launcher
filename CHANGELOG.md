@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.6
+
+- **Módulo CASE**: la cabecera pasa de `NSP` a `▮▮▮▮ CASE`. Las barras van pegadas al
+  título y todo el grupo es **un solo botón** que abre el panel; al enfocar se resalta y
+  **A** lo abre, **B** vuelve y el foco regresa al título. El nombre de la app, el icono,
+  Ajustes y el APK siguen siendo **NSP**.
+- **Panel CASE**: muestra **el reporte completo** que devuelve el script, con scroll y sin
+  parser ni Markdown (emojis incluidos; los que Android 5.1 no conoce se ven como cuadro).
+  Cabecera con barras, `CASE`, `UNIDAD DE SOPORTE · NSP` y la marca de tiempo; pie con
+  `A actualizar | X abrir enlace | B volver`.
+- **Estados**: sin configurar, sin reporte, consultando, correcto, error (conserva el último
+  texto bueno y la hora del intento) y desactualizado (`Sin actualizar desde ayer 20:01`).
+  Las barras indican: 4 azules al día, 2 desactualizado, 1 roja error, 0 sin configurar.
+- **Refresco 08:00 / 20:00** con una sola consulta de recuperación al arrancar; el último
+  reporte queda en caché y sin red se sigue mostrando. Un solo intento automático por slot;
+  **A** en el panel permite reintentar cuando quieras.
+- **Ajustes → CASE**: se quitan las filas `Personalidad` (voz) y `Abrir CASE`. En su lugar,
+  cuadro multilínea para pegar el bloque con la URL y el token, **Importar desde archivo**
+  (`Download/case.txt` o la carpeta de la app), **Guardar CASE**, **Probar CASE** y **Borrar
+  configuración**, con línea de estado (`host · token ••••1234 · Actualizado hoy 08:02`).
+- **Seguridad**: la URL y el token **no están en el código, el APK, la documentación ni el
+  repositorio**; se guardan en `SharedPreferences` del aparato y el token se muestra
+  enmascarado. La consulta es HTTPS con reintento de raíces empaquetadas y un único GET al
+  destino de un solo uso del script.
+- **Sin voz**: se retira la voz del robot y el overlay de la 1.5; CASE ya no habla.
+- versionCode 12.
+
 ## 1.5
 
 - **RSS arreglado**: el parser limpia la etiqueta al cerrar, acepta CDATA y descarta texto

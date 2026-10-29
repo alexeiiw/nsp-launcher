@@ -1,5 +1,15 @@
 # Versionado
 
+## Versión 1.6
+
+- `versionName`: **1.6**.
+- `versionCode`: **12**.
+- Módulo CASE completo: cabecera `▮▮▮▮ CASE` como botón, panel con el reporte íntegro,
+  configuración de URL/token en Ajustes e importación de `case.txt`, refresco 08:00/20:00 y
+  caché. Se retira la voz y el overlay de la 1.5.
+- Primera versión destinada a llegar por el actualizador; misma firma que la 1.5.
+- La URL y el token del script **no** forman parte de la versión: se configuran en el aparato.
+
 ## Versión 1.5
 
 - `versionName`: **1.5**.

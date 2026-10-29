@@ -2,38 +2,29 @@ package com.nsp.launcher;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
-import android.os.BatteryManager;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
-
-/** Overlay de CASE: estado del sistema con la voz del robot. */
+/** Panel del modulo CASE: muestra el reporte completo del endpoint. */
 public class CaseActivity extends Activity {
 
     private CaseView mark;
-    private TextView voice;
-    private TextView versionLine;
-    private TextView updateLine;
-    private TextView batteryLine;
-    private TextView weatherLine;
-    private TextView btcLine;
-    private TextView newsLine;
-    private boolean checking;
+    private TextView stamp;
+    private TextView status;
+    private TextView body;
+    private TextView footer;
+    private ScrollView scroll;
+    private boolean loading;
+    private String shownText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +40,7 @@ public class CaseActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.BLACK);
-        root.setPadding(dp(32), dp(22), dp(32), dp(16));
+        root.setPadding(dp(32), dp(20), dp(32), dp(12));
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
@@ -57,18 +48,17 @@ public class CaseActivity extends Activity {
 
         mark = new CaseView(this);
         mark.setColors(0xFF1BA1E2, 0x33FFFFFF);
-        LinearLayout.LayoutParams markParams = new LinearLayout.LayoutParams(dp(54), dp(84));
-        header.addView(mark, markParams);
+        header.addView(mark, new LinearLayout.LayoutParams(dp(54), dp(80)));
 
         LinearLayout titles = new LinearLayout(this);
         titles.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout.LayoutParams titlesParams = new LinearLayout.LayoutParams(-1, -2);
+        LinearLayout.LayoutParams titlesParams = new LinearLayout.LayoutParams(0, -2, 1f);
         titlesParams.leftMargin = dp(22);
         header.addView(titles, titlesParams);
 
         TextView title = new TextView(this);
         title.setText("CASE");
-        title.setTextSize(34);
+        title.setTextSize(32);
         title.setTextColor(Color.WHITE);
         title.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
         title.setLetterSpacing(0.12f);
@@ -81,44 +71,47 @@ public class CaseActivity extends Activity {
         subtitle.setLetterSpacing(0.22f);
         titles.addView(subtitle);
 
+        stamp = new TextView(this);
+        stamp.setTextSize(9);
+        stamp.setTextColor(0xFF9E9E9E);
+        stamp.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
+        header.addView(stamp, new LinearLayout.LayoutParams(-2, -2));
+
         root.addView(header);
 
-        voice = new TextView(this);
-        voice.setTextSize(15);
-        voice.setTextColor(0xFF7FD3FF);
-        voice.setPadding(0, dp(18), 0, dp(14));
-        root.addView(voice);
+        status = new TextView(this);
+        status.setTextSize(12);
+        status.setTextColor(0xFF7FD3FF);
+        status.setPadding(0, dp(12), 0, dp(6));
+        root.addView(status);
 
         View divider = new View(this);
         divider.setBackgroundColor(0x33FFFFFF);
         LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(-1, dp(1));
-        dividerParams.bottomMargin = dp(12);
+        dividerParams.bottomMargin = dp(10);
         root.addView(divider, dividerParams);
 
-        ScrollView scroll = new ScrollView(this);
+        scroll = new ScrollView(this);
         scroll.setVerticalScrollBarEnabled(false);
-        LinearLayout status = new LinearLayout(this);
-        status.setOrientation(LinearLayout.VERTICAL);
-        scroll.addView(status, new LinearLayout.LayoutParams(-1, -2));
+        scroll.setFocusable(true);
+
+        body = new TextView(this);
+        body.setTextSize(15);
+        body.setTextColor(0xFFEDEDED);
+        body.setLineSpacing(dp(4), 1f);
+        body.setTextIsSelectable(false);
+        scroll.addView(body, new LinearLayout.LayoutParams(-1, -2));
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1f));
 
-        versionLine = addLine(status, "NSP");
-        updateLine = addLine(status, "ACTUALIZACIÓN");
-        batteryLine = addLine(status, "BATERÍA");
-        weatherLine = addLine(status, "CLIMA");
-        btcLine = addLine(status, "BTC");
-        newsLine = addLine(status, "NOTICIAS");
-
-        TextView hint = new TextView(this);
-        hint.setText("A comprobar actualización   |   B volver");
-        hint.setTextSize(9);
-        hint.setTextColor(0xFF777777);
-        hint.setGravity(Gravity.CENTER);
-        hint.setPadding(0, dp(8), 0, 0);
-        root.addView(hint);
+        footer = new TextView(this);
+        footer.setTextSize(9);
+        footer.setTextColor(0xFF777777);
+        footer.setGravity(Gravity.CENTER);
+        footer.setPadding(0, dp(8), 0, 0);
+        root.addView(footer);
 
         setContentView(root);
-        refresh();
+        render();
     }
 
     private int dp(float value) {
@@ -126,118 +119,136 @@ public class CaseActivity extends Activity {
                 getResources().getDisplayMetrics()));
     }
 
-    private TextView addLine(LinearLayout parent, String label) {
-        TextView line = new TextView(this);
-        line.setTextSize(12);
-        line.setTextColor(0xFFE0E0E0);
-        line.setTypeface(Typeface.create("monospace", Typeface.NORMAL));
-        line.setPadding(0, dp(3), 0, dp(3));
-        line.setTag(label);
-        parent.addView(line);
-        return line;
+    private CaseService.Callback callback() {
+        return new CaseService.Callback() {
+            public void onResult(String text, String error) {
+                if (isFinishing()) return;
+                loading = false;
+                render();
+            }
+        };
     }
 
-    private boolean voiceEnabled() {
-        return getSharedPreferences("nsp", MODE_PRIVATE).getBoolean("case_voice", true);
+    private void render() {
+        boolean configured = CaseService.isConfigured(this);
+        String text = CaseService.cachedText(this);
+        if (text == null) text = "";
+
+        if (text.length() > 0) {
+            setBody(text);
+        } else if (configured) {
+            setBody("Sin reporte todavía.\n\nA consulta el script.");
+        } else {
+            setBody("Falta configurar CASE en Ajustes.\n\n"
+                    + "Pega el bloque con la URL y el token, o importa case.txt.\n\n"
+                    + "A abre Ajustes.");
+        }
+
+        stamp.setText(CaseService.stamp(this));
+
+        String cachedError = CaseService.cachedError(this);
+        if (!configured) {
+            status.setText("CASE sin configurar");
+        } else if (loading) {
+            status.setText("Consultando… puede tardar unos 20 s");
+        } else if (cachedError != null && cachedError.length() > 0) {
+            status.setText("No se pudo actualizar: " + cachedError
+                    + " · " + CaseService.attemptStamp(this));
+        } else if (CaseService.isDue(this) && CaseService.lastTime(this) > 0L) {
+            status.setText("Sin actualizar desde "
+                    + CaseService.shortStamp(CaseService.lastTime(this)));
+        } else {
+            status.setText("");
+        }
+        status.setVisibility(status.getText().length() == 0 ? View.GONE : View.VISIBLE);
+
+        int level = CaseService.indicator(this);
+        mark.setLit(level);
+        mark.setColors(level <= 1 && level > 0 ? 0xFFFF5252 : 0xFF1BA1E2, 0x33FFFFFF);
+
+        updateFooter(configured);
+        if (!scroll.hasFocus()) scroll.requestFocus();
+    }
+
+    /** Cambia el texto solo si es distinto y vuelve arriba sin perder la lectura al reabrir. */
+    private void setBody(String text) {
+        if (text.equals(shownText)) return;
+        shownText = text;
+        body.setText(text);
+        scroll.post(new Runnable() {
+            public void run() {
+                scroll.scrollTo(0, 0);
+            }
+        });
+        scroll.getViewTreeObserver().addOnGlobalLayoutListener(
+                new ViewTreeObserver.OnGlobalLayoutListener() {
+                    public void onGlobalLayout() {
+                        scroll.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                        scroll.scrollTo(0, 0);
+                    }
+                });
+    }
+
+    private void updateFooter(boolean configured) {
+        String link = CaseService.firstLink(CaseService.cachedText(this));
+        StringBuilder hint = new StringBuilder();
+        if (!configured) {
+            hint.append("A abrir Ajustes");
+        } else if (loading) {
+            hint.append("Consultando…");
+        } else {
+            hint.append("A actualizar");
+            if (link != null) hint.append("  |  X abrir enlace");
+        }
+        hint.append("  |  ").append(loading ? "B cancelar" : "B volver");
+        footer.setText(hint.toString());
     }
 
     private void refresh() {
-        int level = 0;
-        boolean charging = false;
-        try {
-            Intent battery = registerReceiver(null,
-                    new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-            if (battery != null) {
-                int raw = battery.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-                int scale = battery.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-                level = raw >= 0 && scale > 0 ? Math.round(raw * 100f / scale) : 0;
-                charging = battery.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0;
-            }
-        } catch (Exception ignored) {
-        }
-
-        versionLine.setText("NSP        " + UpdateService.installedVersion(this)
-                + "  ·  código " + UpdateService.installedCode(this));
-        updateLine.setText("ACTUALIZ.  " + UpdateService.statusText(this));
-        batteryLine.setText("BATERÍA    " + level + " %"
-                + (charging ? "  ·  cargando" : ""));
-
-        WeatherData weather = WeatherService.loadCached(this);
-        if (weather == null) {
-            weatherLine.setText("CLIMA      sin datos");
-        } else {
-            weatherLine.setText("CLIMA      " + Math.round(weather.temperature) + "°  "
-                    + WeatherService.label(weather.code));
-        }
-
-        BtcData btc = BtcService.loadCached(this);
-        if (btc == null) {
-            btcLine.setText("BTC        sin datos");
-        } else {
-            btcLine.setText("BTC        " + BtcService.format(btc.usd)
-                    + "  ·  " + age(btc.updated));
-        }
-
-        ArrayList<RssItem> news = RssService.peek(0);
-        newsLine.setText("NOTICIAS   " + (news == null ? "sin datos" : news.size() + " titulares"));
-
-        int lit = charging ? 4 : (level >= 50 ? 4 : level >= 20 ? 3 : level >= 10 ? 2 : 1);
-        mark.setLit(lit);
-
-        if (!voiceEnabled()) {
-            voice.setText("Estado del sistema");
+        if (loading) return;
+        if (!CaseService.isConfigured(this)) {
+            startActivity(new Intent(this, SettingsActivity.class));
             return;
         }
-        if (!charging && level > 0 && level < 15) {
-            voice.setText("CASE · Reserva crítica. Conecta la consola.");
-        } else if (charging) {
-            voice.setText("CASE · Recargando. Sistemas nominales.");
-        } else {
-            voice.setText("CASE · Sistemas nominales. Todo en orden.");
+        loading = true;
+        updateFooter(true);
+        status.setText("Consultando… puede tardar unos 20 s");
+        CaseService.refresh(this, callback());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (loading) return;
+        render();
+        if (CaseService.refreshIfDue(this, callback())) {
+            loading = true;
+            status.setText("Consultando… puede tardar unos 20 s");
+            updateFooter(true);
         }
-    }
-
-    private String age(long updated) {
-        long delta = System.currentTimeMillis() - updated;
-        if (delta < 60L * 1000L) return "ahora";
-        long minutes = delta / (60L * 1000L);
-        if (minutes < 60L) return "hace " + minutes + " min";
-        return "hace " + (minutes / 60L) + " h";
-    }
-
-    private void checkUpdate() {
-        if (checking) return;
-        checking = true;
-        updateLine.setText("ACTUALIZ.  comprobando…");
-        UpdateService.check(this, true, new UpdateService.CheckCallback() {
-            public void onResult(UpdateService.Release release, String error) {
-                checking = false;
-                refresh();
-                if (release == null) {
-                    toast(error == null ? "NSP está al día" : "No se pudo comprobar: " + error);
-                }
-            }
-        });
-    }
-
-    private void toast(String text) {
-        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
-            switch (event.getKeyCode()) {
-                case KeyEvent.KEYCODE_BUTTON_B:
-                    finish();
-                    return true;
-                case KeyEvent.KEYCODE_BUTTON_A:
-                case KeyEvent.KEYCODE_DPAD_CENTER:
-                case KeyEvent.KEYCODE_ENTER:
-                    checkUpdate();
-                    return true;
-                default:
-                    break;
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            int code = event.getKeyCode();
+            if (code == KeyEvent.KEYCODE_BUTTON_A
+                    || code == KeyEvent.KEYCODE_DPAD_CENTER
+                    || code == KeyEvent.KEYCODE_ENTER
+                    || code == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+                if (event.getRepeatCount() == 0) refresh();
+                return true;
+            }
+            if (code == KeyEvent.KEYCODE_BUTTON_X) {
+                if (event.getRepeatCount() == 0) {
+                    String link = CaseService.firstLink(CaseService.cachedText(this));
+                    if (link != null) BrowserUtil.open(this, link);
+                }
+                return true;
+            }
+            if (code == KeyEvent.KEYCODE_BUTTON_B) {
+                if (event.getRepeatCount() == 0) finish();
+                return true;
             }
         }
         return super.dispatchKeyEvent(event);

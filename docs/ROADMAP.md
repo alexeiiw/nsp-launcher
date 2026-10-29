@@ -1,7 +1,8 @@
 # Pendientes — NSP Launcher
 
-Estado actual: **1.5** publicado (28/10/2026); última instalación manual. **1.6** siguiente:
-consulta CASE (texto completo), configuración de URL/token y ajustes del actualizador.
+Estado actual: **1.6** implementado y probado en emulador (29/10/2026), pendiente de publicar.
+Incluye la consulta CASE (texto completo), la configuración de URL/token y la retirada de la
+voz. Los ajustes del actualizador pasan a la 1.7.
 
 ## 1.5 — publicado (28/10/2026)
 
@@ -42,7 +43,7 @@ Agenda, Noticias o Recientes. Al pulsarla abre un overlay a pantalla completa co
 Con mando sin teclado físico escribir será lento; por eso queda como acceso opcional, no
 sustituye Noticias.
 
-## 1.6 — siguiente
+## 1.6 — implementado (29/10/2026)
 
 ### Consulta CASE (texto completo)
 
@@ -50,19 +51,24 @@ El endpoint es un Apps Script con `doPost` que recibe `{canal, token, texto:"/ho
 responde JSON; la app sigue el `302` hacia `googleusercontent` con un GET manual.
 Especificación completa en [`SPEC-CASE.md`](SPEC-CASE.md).
 
-- La cabecera izquierda pasa a ser `▮▮▮▮ CASE`: el logo de barras se mueve junto al título
-  y el conjunto es el botón que abre el panel. La derecha queda BTC, fecha, búsqueda, chip y
-  engranaje. El bloque de fecha no cambia.
-- La app sigue llamándose NSP (icono, lista de apps, Ajustes, APK).
-- El panel muestra **el mensaje completo** o el enlace que devuelva, sin parser, sin
+- [x] La cabecera izquierda pasa a ser `▮▮▮▮ CASE`: el logo de barras se mueve junto al
+  título y el conjunto es el botón que abre el panel. La derecha queda BTC, fecha, búsqueda,
+  chip y engranaje. El bloque de fecha no cambia.
+- [x] La app sigue llamándose NSP (icono, lista de apps, Ajustes, APK).
+- [x] El panel muestra **el mensaje completo** o el enlace que devuelva, sin parser, sin
   resumen y sin voz.
-- Se retiran el banner y la voz de la 1.5. El script no necesita `updated` ni `banner`.
-- En Ajustes se quitan las filas `Personalidad` y `Abrir CASE`; en su lugar va el cuadro
+- [x] Se retiran el banner y la voz de la 1.5. El script no necesita `updated` ni `banner`.
+- [x] En Ajustes se quitan las filas `Personalidad` y `Abrir CASE`; en su lugar va el cuadro
   multilínea (o `Download/case.txt`) para pegar URL y token. Nunca van en el código, el APK
   ni el repo. Token enmascarado.
-- Refresco a las **08:00 y 20:00** con recuperación al arrancar; caché del último reporte.
-- Emojis sin filtrar; en Android 5.1 los recientes salen como cuadro (aceptado).
-- Se descarta ETag: el endpoint es dinámico y la caché es por horario.
+- [x] Refresco a las **08:00 y 20:00** con recuperación al arrancar; caché del último reporte.
+- [x] Emojis sin filtrar; en Android 5.1 los recientes salen como cuadro (aceptado).
+- [x] Se descarta ETag: el endpoint es dinámico y la caché es por horario.
+- [x] Indicador de barras por estado (4 al día, 2 desactualizado, 1 rojo error, 0 sin
+  configurar) y estados del panel (sin configurar, sin reporte, consultando, error y
+  desactualizado).
+
+## 1.7 — pendiente
 
 ### Ajustes del actualizador
 

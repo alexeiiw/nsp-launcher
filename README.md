@@ -1,4 +1,4 @@
-# NSP Launcher 1.5
+# NSP Launcher 1.6
 
 **NSP = NVIDIA Shield Portable.**
 
@@ -22,9 +22,10 @@ Windows Phone. Java puro, sin Gradle y sin dependencias externas.
 - **Ajustes en la cabecera**: icono ⚙ arriba a la derecha (llega con **ARRIBA** desde la
   fila SISTEMA; **B** vuelve a los mosaicos).
 - **Panel de sistema**: `Agenda | Avisos | Batería | Clima | Memoria`.
-- **Cabecera**: título NSP + chip BTC + fecha larga + **un solo reloj**, elegible en
-  Ajustes: **Analógico / Digital / Oculto**. Con el reloj oculto, la fecha crece a la
-  derecha (día grande).
+- **Cabecera**: `▮▮▮▮ CASE` a la izquierda (barras + título, un solo botón que abre el panel
+  del módulo CASE y, de paso, indica el estado), chip BTC, fecha larga, búsqueda, chip de
+  actualización, engranaje y **un solo reloj** elegible en Ajustes: **Analógico / Digital /
+  Oculto**. Con el reloj oculto, la fecha crece a la derecha (día grande).
 - **Pista de controles**: aparece al arrancar, se desvanece a los ~6 s y vuelve a salir si
   pulsas una tecla sin asignar (volumen, NVIDIA, medios…).
 - **Anillo de batería** en el panel: nivel como arco de 270 %, porcentaje en el centro, color
@@ -89,7 +90,25 @@ de accesibilidad mínimo. Para que funcione, actívalo una vez:
 El servicio no lee el contenido de la pantalla; solo llama a la acción global de energía
 cuando se lo piden.
 
-## Clima, BTC y privacidad
+## Módulo CASE
+
+El launcher **consulta** un Apps Script propio (no es un webhook: la consola pregunta y el
+script responde) y muestra el reporte completo en un panel.
+
+- **Entrada**: las barras + `CASE` de la cabecera. El grupo se resalta al enfocar y **A** lo
+  abre; al salir, el foco vuelve a él.
+- **Panel**: texto íntegro con scroll, marca de tiempo y estado (`Consultando…`,
+  `No se pudo actualizar: …`, `Sin actualizar desde ayer 20:01`). Si la respuesta es un
+  enlace, **X** lo abre en Chrome o Firefox; **A** vuelve a consultar; **B** cierra.
+- **Refresco**: 08:00 y 20:00. Al arrancar, si el último reporte es de un slot anterior, hace
+  **una** consulta de recuperación. Sin red se conserva el último reporte bueno.
+- **Indicador de las barras**: 4 azules = al día; 2 = desactualizado; 1 roja = error;
+  0 = sin configurar.
+- **Configuración**: Ajustes → **CASE**. Se pega el bloque con la URL y el token (o se
+  importa `Download/case.txt`) y se pulsa **Guardar CASE**; **Probar CASE** verifica sin
+  guardar nada.
+- **Privacidad**: la URL y el token **no van en el APK ni en el repositorio**; viven en
+  `SharedPreferences` de este aparato y el token se muestra enmascarado (últimos 4).
 
 ## Clima, BTC y privacidad
 
@@ -103,7 +122,8 @@ cuando se lo piden.
   tiene (hoy, Let's Encrypt/ISRG), la app reintenta con la cotización usando las **raíces
   ISRG X1/X2 empaquetadas** en el APK (`res/raw`). Es confianza **adicional**, solo para
   esta app; no se toca el almacén del sistema ni las demás apps.
-- Permisos: `INTERNET`, `READ_CALENDAR` (lista de actividades en la tarjeta Agenda) y el
+- Permisos: `INTERNET`, `READ_CALENDAR` (lista de actividades en la tarjeta Agenda),
+  `READ_EXTERNAL_STORAGE` (leer `case.txt` al importar la configuración de CASE) y el
   permiso de binding del servicio de notificaciones
   (`BIND_NOTIFICATION_LISTENER_SERVICE`, que el sistema exige para escuchar notificaciones).
 - Sin analítica, sin telemetría y sin servicios de Google.
@@ -153,7 +173,7 @@ cd NSP
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-Salida: `dist\NSPLauncher-1.5.apk` y `dist\NSPLauncher.apk` (versionCode 11).
+Salida: `dist\NSPLauncher-1.6.apk` y `dist\NSPLauncher.apk` (versionCode 12).
 
 El script autodetecta el SDK y el JDK 8; también acepta:
 
@@ -178,7 +198,7 @@ Más detalle en [docs/BUILD.md](docs/BUILD.md). La numeración se explica en
 o:
 
 ```powershell
-adb install -r .\dist\NSPLauncher-1.5.apk
+adb install -r .\dist\NSPLauncher-1.6.apk
 adb shell am start -n com.nsp.launcher/.MainActivity
 ```
 
@@ -208,6 +228,15 @@ app/src/main/
     IconStore.java          caché de iconos en memoria y disco
     NotificationService.java listener de notificaciones (solo conteo)
     NotificationStore.java   contadores por paquete y descarte
+    CaseService.java         módulo CASE: consulta, caché, slots e indicador
+    CaseActivity.java        panel CASE (reporte completo, A actualiza, X enlace, B vuelve)
+    CaseView.java            las cuatro barras del logo/indicador
+    RssService.java          lector RSS (BBC, ESPN, Google News, Fútbol) + caché
+    SearchActivity.java      búsqueda de Google con teclado virtual
+    UpdateService.java       actualizador: Release de GitHub, descarga y validación
+    UpdateFlow.java          diálogo de actualización e instalador
+    ApkProvider.java         sirve el APK por content:// en Android 7+
+    BrowserUtil.java         abre enlaces en Chrome/Firefox o en el selector
   res/drawable-nodpi/        fondos incluidos
   res/                       temas, textos, iconos
 build.ps1                   compilación sin Gradle
@@ -227,6 +256,10 @@ Arquitectura y flujos en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Flujo completo de Inicio: activar → elegir NSP → Siempre; B/BACK no cierran; desactivar → vuelve
   NVIDIA.
 - Instalación limpia, arranque en frío y con caché, sin crashes ni ANR.
+- Módulo CASE: cabecera `▮▮▮▮ CASE` como un solo botón, panel con el reporte real de 899
+  caracteres, scroll sin perder posición al reabrir, refresco manual (A), consulta de
+  recuperación al arrancar, estados sin configurar / desactualizado / error, enlace abierto
+  con X y configuración + importación de `case.txt` desde Ajustes.
 - Pendiente: prueba prolongada en hardware real, fotos de cámara con EXIF y varias tarjetas SD.
 
 ## Limitaciones
