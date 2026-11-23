@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7
+
+- **Accesos rápidos**: Ajustes → «Accesos rápidos» tiene dos filas. Tocar una pide pulsar el
+  botón o gatillo que quieras usar; NSP guarda ese código y después eliges la app. En el
+  launcher, pulsar ese botón abre la app asignada. «Quitar accesos rápidos» borra ambos.
+- Teclas reservadas no asignables: D-pad, A/B/X/Y, Start/Select, L1/R1, NVIDIA/Menu, Enter,
+  Home, Back, encendido y volumen.
+- versionCode 13.
+
 ## 1.6
 
 - **Módulo CASE**: la cabecera pasa de `NSP` a `▮▮▮▮ CASE`. Las barras van pegadas al

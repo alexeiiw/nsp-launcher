@@ -1,8 +1,8 @@
 # Pendientes — NSP Launcher
 
 Estado actual: **1.6** publicado (29/10/2026) con la Release `v1.6`. Incluye la consulta CASE
-(texto completo), la configuración de URL/token y la retirada de la voz. Los ajustes del
-actualizador pasan a la 1.7.
+(texto completo), la configuración de URL/token y la retirada de la voz. La **1.7** añade dos
+accesos rápidos configurables con los gatillos del mando (ver abajo).
 
 ## 1.5 — publicado (28/10/2026)
 
@@ -68,15 +68,15 @@ Especificación completa en [`SPEC-CASE.md`](SPEC-CASE.md).
   configurar) y estados del panel (sin configurar, sin reporte, consultando, error y
   desactualizado).
 
-## 1.7 — pendiente
+## 1.7 — accesos rápidos (pendiente de publicar)
 
-### Ajustes del actualizador
-
-- Activar o desactivar el chequeo automático.
-- Frecuencia: diaria o semanal.
-- Canal: estable.
-- Buscar ahora.
-- Borrar el APK descargado.
+- Ajustes → **Accesos rápidos**: dos filas («Acceso rápido 1» y «2»). Al tocar una, se pide
+  pulsar el botón o gatillo; NSP guarda el código que llegue (tecla o eje de los gatillos) y
+  después se elige la app. Quitar con «Quitar accesos rápidos».
+- En el launcher, pulsar ese botón abre la app asignada.
+- Teclas reservadas (no asignables): D-pad, A/B/X/Y, Start/Select, L1/R1, NVIDIA/Menu, Enter,
+  Home, Back, Encendido y volumen.
+- Versión: `versionName 1.7`, `versionCode 13`.
 
 ## Verificación en hardware (no es desarrollo pendiente)
 
@@ -89,9 +89,10 @@ no reproducen su pila TLS ni su teclado.
 - Actualizador: la consulta funciona (dijo “última versión” el 28/10/2026). La primera
   descarga e instalación real ocurrirá cuando se publique la 1.6.
 - Apagar consola: verificado en hardware (27/10/2026).
+- Accesos rápidos 1.7: flujo probado en emulador con teclas; los gatillos de la consola están
+  por verificar.
 
 ## Ideas para cuando se quieran retomar
 
-- Filas de más jugados y accesos rápidos.
 - Tamaño de mosaico configurable.
 - Tarjeta de red, diagnóstico de rendimiento, exportar/importar ajustes, búsqueda local, caché de iconos y reloj de 12 h.

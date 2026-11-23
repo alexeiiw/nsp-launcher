@@ -21,6 +21,7 @@ import android.text.InputType;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -61,6 +62,9 @@ public class SettingsActivity extends Activity {
     private EditText caseInput;
     private LinearLayout caseSaveRow;
     private TextView updateValue;
+    private TextView captureBar;
+    private final TextView[] quickValues = new TextView[QuickKeys.SLOTS];
+    private int captureSlot = -1;
 
     private boolean caseTesting;
 
@@ -202,6 +206,32 @@ public class SettingsActivity extends Activity {
             public void run() {
                 prefs.edit().putBoolean("reload_apps", true).apply();
                 toast("Se recargarán al volver");
+            }
+        });
+
+        addLabel(content, "ACCESOS RÁPIDOS");
+
+        captureBar = new TextView(this);
+        captureBar.setTextSize(11);
+        captureBar.setTextColor(isLight ? 0xFF0050EF : 0xFF7FD3FF);
+        captureBar.setPadding(dp(24), dp(6), dp(24), dp(6));
+        captureBar.setVisibility(View.GONE);
+        content.addView(captureBar, new LinearLayout.LayoutParams(-1, -2));
+
+        for (int i = 0; i < QuickKeys.SLOTS; i++) {
+            final int slot = i;
+            quickValues[i] = addRow(content, "Acceso rápido " + (i + 1), "", new Runnable() {
+                public void run() {
+                    startCapture(slot);
+                }
+            });
+        }
+
+        addRow(content, "Quitar accesos rápidos", "", new Runnable() {
+            public void run() {
+                QuickKeys.clearAll(SettingsActivity.this);
+                updateValues();
+                toast("Accesos rápidos quitados");
             }
         });
 
@@ -387,6 +417,13 @@ public class SettingsActivity extends Activity {
     }
 
     private void updateValues() {
+        for (int i = 0; i < QuickKeys.SLOTS; i++) {
+            if (quickValues[i] == null) continue;
+            QuickKeys.Binding binding = QuickKeys.load(this, i);
+            quickValues[i].setText(binding == null
+                    ? "Sin asignar"
+                    : binding.describe() + " → " + binding.label);
+        }
         if (themeValue != null) themeValue.setText(isLight ? "Claro" : "Oscuro");
         if (clockValue != null) {
             int style = prefs.getInt("clock_style", 0);
@@ -931,8 +968,89 @@ public class SettingsActivity extends Activity {
         if (hasFocus) applyImmersive();
     }
 
+    private void startCapture(int slot) {
+        captureSlot = slot;
+        captureBar.setText("Acceso rápido " + (slot + 1)
+                + ": presiona el botón o gatillo que quieras usar. B cancela.");
+        captureBar.setVisibility(View.VISIBLE);
+    }
+
+    private void endCapture() {
+        captureSlot = -1;
+        captureBar.setVisibility(View.GONE);
+    }
+
+    private void captured(int kind, int code) {
+        final int slot = captureSlot;
+        endCapture();
+        showQuickPicker(slot, kind, code);
+    }
+
+    private void showQuickPicker(final int slot, final int kind, final int code) {
+        final ArrayList<AppEntry> apps = new AppRepository(this).load();
+        String[] names = new String[apps.size()];
+        for (int i = 0; i < apps.size(); i++) names[i] = apps.get(i).label;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Acceso " + (slot + 1) + " · " + QuickKeys.describe(kind, code)
+                + " → qué app");
+        builder.setItems(names, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                QuickKeys.save(SettingsActivity.this, slot, kind, code, apps.get(which));
+                updateValues();
+                toast("Acceso " + (slot + 1) + ": " + apps.get(which).label);
+            }
+        });
+        builder.setNegativeButton("Cancelar", null);
+
+        AlertDialog dialog = builder.create();
+        dialogOpen = true;
+        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            public void onDismiss(DialogInterface d) {
+                dialogOpen = false;
+            }
+        });
+        dialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
+            public boolean onKey(DialogInterface d, int keyCode, KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_BUTTON_B && event.getAction() == KeyEvent.ACTION_DOWN) {
+                    d.dismiss();
+                    return true;
+                }
+                return false;
+            }
+        });
+        dialog.show();
+    }
+
+    @Override
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        if (captureSlot >= 0 && event.getAction() == MotionEvent.ACTION_MOVE) {
+            for (int axis : QuickKeys.AXES) {
+                if (event.getAxisValue(axis) > QuickKeys.AXIS_THRESHOLD) {
+                    captured(QuickKeys.KIND_AXIS, axis);
+                    return true;
+                }
+            }
+            return true;
+        }
+        return super.onGenericMotionEvent(event);
+    }
+
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (captureSlot >= 0) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+                int code = event.getKeyCode();
+                if (code == KeyEvent.KEYCODE_BUTTON_B) {
+                    endCapture();
+                } else if (QuickKeys.isReserved(code)) {
+                    toast("Ese botón está reservado por el sistema o la navegación");
+                } else {
+                    captured(QuickKeys.KIND_KEY, code);
+                }
+            }
+            return true;
+        }
         if (dialogOpen) return super.dispatchKeyEvent(event);
 
         if (event.getAction() == KeyEvent.ACTION_DOWN) {

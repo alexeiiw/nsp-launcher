@@ -118,6 +118,7 @@ public class MainActivity extends Activity {
     private boolean updateChecking;
     private boolean weatherLoading = false;
     private boolean recentsDirty = false;
+    private final boolean[] quickAxisDown = new boolean[QuickKeys.SLOTS];
     private BroadcastReceiver packageReceiver;
     private IconStore iconStore;
     private Bitmap customBackgroundBitmap;
@@ -1937,6 +1938,13 @@ public class MainActivity extends Activity {
 
         int code = event.getKeyCode();
         int action = event.getAction();
+        if (action == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+            QuickKeys.Binding quick = QuickKeys.findKey(this, code);
+            if (quick != null) {
+                openQuick(quick);
+                return true;
+            }
+        }
         if (action == KeyEvent.ACTION_DOWN) {
             switch (code) {
                 case KeyEvent.KEYCODE_DPAD_LEFT:
@@ -2009,7 +2017,22 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean onGenericMotionEvent(MotionEvent event) {
-        if (dialogOpen || sections.isEmpty()) return super.onGenericMotionEvent(event);
+        if (dialogOpen) return super.onGenericMotionEvent(event);
+
+        if (event.getAction() == MotionEvent.ACTION_MOVE) {
+            for (int slot = 0; slot < QuickKeys.SLOTS; slot++) {
+                QuickKeys.Binding quick = QuickKeys.load(this, slot);
+                boolean down = quick != null && quick.kind == QuickKeys.KIND_AXIS
+                        && event.getAxisValue(quick.code) > QuickKeys.AXIS_THRESHOLD;
+                if (down && !quickAxisDown[slot]) {
+                    quickAxisDown[slot] = true;
+                    openQuick(quick);
+                    return true;
+                }
+                if (!down) quickAxisDown[slot] = false;
+            }
+        }
+        if (sections.isEmpty()) return super.onGenericMotionEvent(event);
 
         int source = event.getSource();
         if ((source & InputDevice.SOURCE_JOYSTICK) == 0
@@ -2048,6 +2071,10 @@ public class MainActivity extends Activity {
             else moveVertical(-1);
         }
         return true;
+    }
+
+    private void openQuick(QuickKeys.Binding quick) {
+        open(new AppEntry(quick.pkg, quick.activity, quick.label));
     }
 
     private void openFocused() {
